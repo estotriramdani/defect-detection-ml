@@ -233,6 +233,141 @@
             </div>
         </div>
 
+        <!-- Training Data Management Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-images me-2"></i>
+                            Manajemen Data Training
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Navigation tabs -->
+                        <ul class="nav nav-tabs" id="trainingDataTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="good-tab" data-bs-toggle="tab" data-bs-target="#good-images" type="button" role="tab">
+                                    <i class="fas fa-thumbs-up text-success me-2"></i>
+                                    Gambar Good (<span id="goodTabCount">{{ good_count }}</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="defect-tab" data-bs-toggle="tab" data-bs-target="#defect-images" type="button" role="tab">
+                                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                    Gambar Defect (<span id="defectTabCount">{{ defect_count }}</span>)
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab content -->
+                        <div class="tab-content mt-3" id="trainingDataTabContent">
+                            <!-- Good Images Tab -->
+                            <div class="tab-pane fade show active" id="good-images" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">Gambar Good Quality</h6>
+                                    <button class="btn btn-danger btn-sm" onclick="clearCategoryData('good')" 
+                                            {% if good_count == 0 %}disabled{% endif %}>
+                                        <i class="fas fa-trash me-2"></i>Hapus Semua Good
+                                    </button>
+                                </div>
+                                <div id="goodImagesList" class="row">
+                                    {% for image in good_images %}
+                                    <div class="col-md-3 col-sm-4 col-6 mb-3" id="image-good-{{ loop.index0 }}">
+                                        <div class="card border-success">
+                                            <img src="{{ url_for('static', filename='training_data/good/' + image.filename) }}" 
+                                                 class="card-img-top" style="height: 150px; object-fit: cover;" 
+                                                 alt="{{ image.filename }}">
+                                            <div class="card-body p-2">
+                                                <p class="card-text small mb-1" title="{{ image.filename }}">
+                                                    {{ image.filename[:20] }}{% if image.filename|length > 20 %}...{% endif %}
+                                                </p>
+                                                <small class="text-muted">{{ image.created }}</small>
+                                                <br>
+                                                <small class="text-muted">{{ "%.1f"|format(image.size / 1024) }} KB</small>
+                                                <div class="mt-2">
+                                                    <button class="btn btn-danger btn-sm w-100" 
+                                                            data-category="good" 
+                                                            data-filename="{{ image.filename }}"
+                                                            data-index="{{ loop.index0 }}"
+                                                            onclick="deleteImage(this)">
+                                                        <i class="fas fa-trash"></i> Hapus
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="col-12">
+                                        <div class="alert alert-info text-center">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Belum ada gambar good yang diupload
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Defect Images Tab -->
+                            <div class="tab-pane fade" id="defect-images" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">Gambar Defect</h6>
+                                    <button class="btn btn-danger btn-sm" onclick="clearCategoryData('defect')" 
+                                            {% if defect_count == 0 %}disabled{% endif %}>
+                                        <i class="fas fa-trash me-2"></i>Hapus Semua Defect
+                                    </button>
+                                </div>
+                                <div id="defectImagesList" class="row">
+                                    {% for image in defect_images %}
+                                    <div class="col-md-3 col-sm-4 col-6 mb-3" id="image-defect-{{ loop.index0 }}">
+                                        <div class="card border-danger">
+                                            <img src="{{ url_for('static', filename='training_data/defect/' + image.filename) }}" 
+                                                 class="card-img-top" style="height: 150px; object-fit: cover;" 
+                                                 alt="{{ image.filename }}">
+                                            <div class="card-body p-2">
+                                                <p class="card-text small mb-1" title="{{ image.filename }}">
+                                                    {{ image.filename[:20] }}{% if image.filename|length > 20 %}...{% endif %}
+                                                </p>
+                                                <small class="text-muted">{{ image.created }}</small>
+                                                <br>
+                                                <small class="text-muted">{{ "%.1f"|format(image.size / 1024) }} KB</small>
+                                                <div class="mt-2">
+                                                    <button class="btn btn-danger btn-sm w-100" 
+                                                            data-category="defect" 
+                                                            data-filename="{{ image.filename }}"
+                                                            data-index="{{ loop.index0 }}"
+                                                            onclick="deleteImage(this)">
+                                                        <i class="fas fa-trash"></i> Hapus
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="col-12">
+                                        <div class="alert alert-info text-center">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Belum ada gambar defect yang diupload
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Clear All Data Button -->
+                        <div class="mt-4 text-center">
+                            <button class="btn btn-outline-danger" onclick="clearAllData()" 
+                                    {% if good_count == 0 and defect_count == 0 %}disabled{% endif %}>
+                                <i class="fas fa-trash-alt me-2"></i>
+                                Hapus Semua Data Training
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Training Section -->
         <div class="row">
             <div class="col-12">
@@ -611,6 +746,143 @@
         function resetTrainingUI() {
             document.getElementById('trainingControls').style.display = 'block';
             document.getElementById('trainingProgress').style.display = 'none';
+        }
+
+        // Training data management functions
+        function deleteImage(button) {
+            const category = button.getAttribute('data-category');
+            const filename = button.getAttribute('data-filename');
+            const index = button.getAttribute('data-index');
+            
+            if (!confirm('Apakah Anda yakin ingin menghapus gambar ini?')) {
+                return;
+            }
+
+            fetch('/delete_training_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    category: category,
+                    filename: filename
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove image element from DOM
+                    const imageElement = document.getElementById(`image-${category}-${index}`);
+                    if (imageElement) {
+                        imageElement.remove();
+                    }
+                    
+                    // Update counters
+                    document.getElementById('goodCount').textContent = data.good_count;
+                    document.getElementById('defectCount').textContent = data.defect_count;
+                    document.getElementById('goodTabCount').textContent = data.good_count;
+                    document.getElementById('defectTabCount').textContent = data.defect_count;
+                    
+                    // Check if list is empty and show message
+                    checkEmptyLists();
+                    
+                    alert('Gambar berhasil dihapus!');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi error saat menghapus gambar');
+            });
+        }
+
+        function clearCategoryData(category) {
+            const categoryName = category === 'good' ? 'Good' : 'Defect';
+            if (!confirm(`Apakah Anda yakin ingin menghapus semua gambar ${categoryName}?`)) {
+                return;
+            }
+
+            fetch('/clear_training_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    category: category
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to refresh the lists
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi error saat menghapus data');
+            });
+        }
+
+        function clearAllData() {
+            if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data training? Tindakan ini tidak dapat dibatalkan!')) {
+                return;
+            }
+
+            fetch('/clear_training_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    category: 'all'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to refresh everything
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi error saat menghapus data');
+            });
+        }
+
+        function checkEmptyLists() {
+            const goodList = document.getElementById('goodImagesList');
+            const defectList = document.getElementById('defectImagesList');
+            
+            // Check if good list is empty
+            if (goodList.children.length === 0) {
+                goodList.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Belum ada gambar good yang diupload
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Check if defect list is empty
+            if (defectList.children.length === 0) {
+                defectList.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Belum ada gambar defect yang diupload
+                        </div>
+                    </div>
+                `;
+            }
         }
     </script>
 </body>

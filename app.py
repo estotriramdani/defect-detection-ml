@@ -200,6 +200,42 @@ def count_training_images():
     
     return {'good_count': good_count, 'defect_count': defect_count}
 
+def get_training_images_list():
+    """
+    Mendapatkan list semua gambar training untuk setiap kategori
+    
+    Returns:
+        dict: Dictionary berisi list gambar good dan defect dengan informasi file
+    """
+    good_folder = os.path.join(app.config['TRAINING_DATA_FOLDER'], 'good')
+    defect_folder = os.path.join(app.config['TRAINING_DATA_FOLDER'], 'defect')
+    
+    def get_image_info(folder, category):
+        images = []
+        if os.path.exists(folder):
+            for filename in os.listdir(folder):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                    filepath = os.path.join(folder, filename)
+                    stat = os.stat(filepath)
+                    images.append({
+                        'filename': filename,
+                        'category': category,
+                        'size': stat.st_size,
+                        'created': datetime.fromtimestamp(stat.st_ctime).strftime('%Y-%m-%d %H:%M:%S'),
+                        'path': f'static/training_data/{category}/{filename}'
+                    })
+        return sorted(images, key=lambda x: x['created'], reverse=True)
+    
+    good_images = get_image_info(good_folder, 'good')
+    defect_images = get_image_info(defect_folder, 'defect')
+    
+    return {
+        'good_images': good_images,
+        'defect_images': defect_images,
+        'good_count': len(good_images),
+        'defect_count': len(defect_images)
+    }
+
 @app.route('/')
 def index():
     """
@@ -304,10 +340,12 @@ def training():
     Returns:
         str: Rendered template halaman training
     """
-    counts = count_training_images()
+    training_data = get_training_images_list()
     return render_template('training.html', 
-                         good_count=counts['good_count'],
-                         defect_count=counts['defect_count'])
+                         good_count=training_data['good_count'],
+                         defect_count=training_data['defect_count'],
+                         good_images=training_data['good_images'],
+                         defect_images=training_data['defect_images'])
 
 @app.route('/upload_training_data', methods=['POST'])
 def upload_training_data():
@@ -410,6 +448,114 @@ def get_training_status():
     """
     return jsonify(training_status)
 
+@app.route('/get_training_data')
+def get_training_data():
+    """
+    Route untuk mendapatkan list training data dalam format JSON
+    
+    Returns:
+        json: List gambar training untuk kedua kategori
+    """
+    try:
+        training_data = get_training_images_list()
+        return jsonify({
+            'success': True,
+            'data': training_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        })
+
+@app.route('/delete_training_image', methods=['POST'])
+def delete_training_image():
+    """
+    Route untuk menghapus gambar training tertentu
+    
+    Returns:
+        json: Response dengan status penghapusan
+    """
+    try:
+        data = request.get_json()
+        category = data.get('category')
+        filename = data.get('filename')
+        
+        if category not in ['good', 'defect']:
+            return jsonify({'success': False, 'message': 'Kategori tidak valid'})
+        
+        if not filename:
+            return jsonify({'success': False, 'message': 'Nama file tidak valid'})
+        
+        # Konstruksi path file
+        file_path = os.path.join(app.config['TRAINING_DATA_FOLDER'], category, filename)
+        
+        # Cek apakah file ada
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'message': 'File tidak ditemukan'})
+        
+        # Hapus file
+        os.remove(file_path)
+        
+        # Update counter
+        counts = count_training_images()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Gambar berhasil dihapus',
+            'good_count': counts['good_count'],
+            'defect_count': counts['defect_count']
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/clear_training_data', methods=['POST'])
+def clear_training_data():
+    """
+    Route untuk menghapus semua data training
+    
+    Returns:
+        json: Response dengan status penghapusan
+    """
+    try:
+        data = request.get_json()
+        category = data.get('category')  # 'good', 'defect', atau 'all'
+        
+        if category not in ['good', 'defect', 'all']:
+            return jsonify({'success': False, 'message': 'Kategori tidak valid'})
+        
+        deleted_count = 0
+        
+        if category == 'all' or category == 'good':
+            good_folder = os.path.join(app.config['TRAINING_DATA_FOLDER'], 'good')
+            if os.path.exists(good_folder):
+                for filename in os.listdir(good_folder):
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                        os.remove(os.path.join(good_folder, filename))
+                        deleted_count += 1
+        
+        if category == 'all' or category == 'defect':
+            defect_folder = os.path.join(app.config['TRAINING_DATA_FOLDER'], 'defect')
+            if os.path.exists(defect_folder):
+                for filename in os.listdir(defect_folder):
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                        os.remove(os.path.join(defect_folder, filename))
+                        deleted_count += 1
+        
+        # Update counter
+        counts = count_training_images()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{deleted_count} gambar berhasil dihapus',
+            'good_count': counts['good_count'],
+            'defect_count': counts['defect_count']
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
 def train_model_background():
     """
     Fungsi untuk training model di background
@@ -499,4 +645,4 @@ if __name__ == '__main__':
     create_upload_folder()
     
     # Menjalankan aplikasi
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
