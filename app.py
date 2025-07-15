@@ -128,21 +128,39 @@ def predict_defect(image_path):
                 'status': 'Gagal memproses gambar'
             }
         
-        # Melakukan prediksi
-        prediction = model.predict(processed_image)
+        # Melakukan prediksi dengan anomaly detection
+        prediction_result = model.predict(processed_image)
+        
+        # Check if model returns tuple (new format) or array (old format)
+        if isinstance(prediction_result, tuple):
+            prediction, anomaly_score = prediction_result
+        else:
+            prediction = prediction_result
+            anomaly_score = 0.0  # Default for old models
         
         # Menginterpretasi hasil prediksi
         # Output model adalah [probability_good, probability_defect]
         confidence = float(np.max(prediction[0]))
         predicted_class = np.argmax(prediction[0])
         
-        # Mapping class index ke label
-        predicted_label = model.classes[predicted_class]
+        # Threshold untuk mendeteksi gambar yang tidak dikenal
+        # Kombinasi confidence threshold dan anomaly score
+        CONFIDENCE_THRESHOLD = 0.6  # Minimum confidence
+        ANOMALY_THRESHOLD = 1.5     # Maximum acceptable anomaly score
+        
+        if confidence < CONFIDENCE_THRESHOLD or anomaly_score > ANOMALY_THRESHOLD:
+            predicted_label = 'unknown'
+            status_message = f'Gambar tidak sesuai dengan pola training data (confidence: {confidence:.3f}, anomaly: {anomaly_score:.3f})'
+        else:
+            # Mapping class index ke label
+            predicted_label = model.classes[predicted_class]
+            status_message = f'success (anomaly score: {anomaly_score:.3f})'
         
         return {
             'prediction': predicted_label,
             'confidence': confidence,
-            'status': 'success'
+            'status': status_message,
+            'anomaly_score': anomaly_score
         }
     
     except Exception as e:

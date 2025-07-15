@@ -19,6 +19,9 @@ class SimpleDefectDetector:
         self.trained = False
         self.training_data_count = {'good_count': 0, 'defect_count': 0}
         self.trained_at = None
+        # Store training features for anomaly detection
+        self.training_features = None
+        self.feature_stats = None
         
     def extract_features(self, image_path):
         """
@@ -143,6 +146,15 @@ class SimpleDefectDetector:
         print(f"  - Good: {self.training_data_count['good_count']}")
         print(f"  - Defect: {self.training_data_count['defect_count']}")
         
+        # Store training features and calculate statistics for anomaly detection
+        self.training_features = features
+        self.feature_stats = {
+            'mean': np.mean(features, axis=0),
+            'std': np.std(features, axis=0),
+            'min': np.min(features, axis=0),
+            'max': np.max(features, axis=0)
+        }
+        
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             features, labels, test_size=0.2, random_state=42, stratify=labels
@@ -175,20 +187,57 @@ class SimpleDefectDetector:
         
         return results
     
+    def calculate_anomaly_score(self, features):
+        """
+        Calculate anomaly score based on distance from training data
+        
+        Args:
+            features (np.array): Feature vector for the image
+            
+        Returns:
+            float: Anomaly score (lower = more similar to training data)
+        """
+        if self.training_features is None or self.feature_stats is None:
+            return 0.5  # Return neutral score if no training data
+        
+        # Normalize features using training statistics
+        normalized_features = (features - self.feature_stats['mean']) / (self.feature_stats['std'] + 1e-8)
+        
+        # Calculate average distance to training samples
+        normalized_training = (self.training_features - self.feature_stats['mean']) / (self.feature_stats['std'] + 1e-8)
+        
+        distances = np.linalg.norm(normalized_training - normalized_features, axis=1)
+        avg_distance = np.mean(distances)
+        min_distance = np.min(distances)
+        
+        # Calculate percentile of current distance among training distances
+        training_distances = []
+        for i in range(len(self.training_features)):
+            other_distances = np.linalg.norm(normalized_training - normalized_training[i], axis=1)
+            training_distances.append(np.mean(other_distances[other_distances > 0]))
+        
+        training_distances = np.array(training_distances)
+        percentile = np.percentile(training_distances, 90)  # 90th percentile
+        
+        # Anomaly score: higher if distance is much larger than typical training distances
+        anomaly_score = min(avg_distance / (percentile + 1e-8), 3.0)  # Cap at 3.0
+        
+        return anomaly_score
+    
     def predict(self, image_array):
         """
-        Prediksi untuk gambar baru
+        Prediksi untuk gambar baru dengan anomaly detection
         
         Args:
             image_array (np.array): Array gambar yang sudah dipreprocess
             
         Returns:
-            np.array: Probability array [prob_good, prob_defect]
+            tuple: (probability_array, anomaly_score)
         """
         if not self.trained:
             # Return random for untrained model
             prob = np.random.random()
-            return np.array([[prob, 1-prob]])
+            return np.array([[prob, 1-prob]]), 0.5
         
         # Extract features from preprocessed image
         # Convert normalized array back to 0-255 range
@@ -208,11 +257,22 @@ class SimpleDefectDetector:
             features = self.extract_features(temp_path)
             features = features.reshape(1, -1)
             
+            # Calculate anomaly score
+            anomaly_score = self.calculate_anomaly_score(features[0])
+            
             # Get probabilities
             proba = self.model.predict_proba(features)[0]
             
-            # Return as [prob_good, prob_defect]
-            return np.array([proba])
+            # Adjust confidence based on anomaly score
+            # Higher anomaly score = lower confidence
+            confidence_multiplier = max(0.1, 1.0 - (anomaly_score - 1.0) * 0.3)
+            adjusted_proba = proba * confidence_multiplier
+            
+            # Renormalize to sum to 1
+            adjusted_proba = adjusted_proba / np.sum(adjusted_proba)
+            
+            # Return as [prob_good, prob_defect] and anomaly score
+            return np.array([adjusted_proba]), anomaly_score
             
         finally:
             # Clean up temp file
@@ -232,6 +292,8 @@ class SimpleDefectDetector:
             'trained': self.trained,
             'training_data_count': self.training_data_count,
             'trained_at': self.trained_at,
+            'training_features': self.training_features,
+            'feature_stats': self.feature_stats,
             'model_type': 'SimpleDefectDetector'
         }
         
@@ -263,6 +325,8 @@ class SimpleDefectDetector:
             detector.trained = model_data['trained']
             detector.training_data_count = model_data['training_data_count']
             detector.trained_at = model_data.get('trained_at')
+            detector.training_features = model_data.get('training_features')
+            detector.feature_stats = model_data.get('feature_stats')
             
             print(f"Model loaded from: {filepath}")
             return detector

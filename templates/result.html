@@ -31,6 +31,11 @@
             background-color: #fff1f2;
             border: 2px solid #ff4757;
         }
+        .prediction-unknown {
+            color: #ffa502;
+            background-color: #fff9f0;
+            border: 2px solid #ffa502;
+        }
         .confidence-meter {
             width: 120px;
             height: 120px;
@@ -117,7 +122,7 @@
                                 </h5>
 
                                 <!-- Status Check -->
-                                {% if status == 'success' %}
+                                {% if status.startswith('success') or status.startswith('Gambar tidak sesuai') %}
                                     <!-- Prediction Result -->
                                     <div class="mb-4">
                                         <label class="form-label fw-bold">Status Label:</label>
@@ -127,11 +132,17 @@
                                                 <h4 class="mb-0 fw-bold">GOOD</h4>
                                                 <small>Label dalam kondisi baik</small>
                                             </div>
-                                        {% else %}
+                                        {% elif prediction == 'defect' %}
                                             <div class="alert prediction-defect text-center py-3">
                                                 <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                                                 <h4 class="mb-0 fw-bold">DEFECT</h4>
                                                 <small>Terdeteksi cacat pada label</small>
+                                            </div>
+                                        {% elif prediction == 'unknown' %}
+                                            <div class="alert prediction-unknown text-center py-3">
+                                                <i class="fas fa-question-circle fa-2x mb-2"></i>
+                                                <h4 class="mb-0 fw-bold">UNKNOWN</h4>
+                                                <small>Gambar tidak sesuai dengan data training</small>
                                             </div>
                                         {% endif %}
                                     </div>
@@ -148,7 +159,7 @@
                                                             stroke-width="8"/>
                                                     <circle cx="60" cy="60" r="50" 
                                                             fill="none" 
-                                                            stroke="{% if prediction == 'good' %}#2ed573{% else %}#ff4757{% endif %}" 
+                                                            stroke="{% if prediction == 'good' %}#2ed573{% elif prediction == 'defect' %}#ff4757{% else %}#ffa502{% endif %}" 
                                                             stroke-width="8"
                                                             stroke-linecap="round"
                                                             stroke-dasharray="314.16" 
@@ -161,7 +172,7 @@
                                             </div>
                                             <div class="flex-grow-1">
                                                 <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar {% if prediction == 'good' %}bg-success{% else %}bg-danger{% endif %}" 
+                                                    <div class="progress-bar {% if prediction == 'good' %}bg-success{% elif prediction == 'defect' %}bg-danger{% else %}bg-warning{% endif %}" 
                                                          role="progressbar" 
                                                          style="width: {{ confidence * 100 }}%"
                                                          aria-valuenow="{{ confidence * 100 }}" 
@@ -196,13 +207,21 @@
                                                     <p class="mb-0 text-muted">
                                                         Produk dapat dilanjutkan ke tahap berikutnya dalam proses produksi.
                                                     </p>
-                                                {% else %}
+                                                {% elif prediction == 'defect' %}
                                                     <p class="mb-2">
                                                         <i class="fas fa-exclamation-circle text-danger me-2"></i>
                                                         Terdeteksi <strong>cacat</strong> pada label kemasan.
                                                     </p>
                                                     <p class="mb-0 text-muted">
                                                         Disarankan untuk melakukan pemeriksaan manual dan tindakan korektif.
+                                                    </p>
+                                                {% elif prediction == 'unknown' %}
+                                                    <p class="mb-2">
+                                                        <i class="fas fa-question-circle text-warning me-2"></i>
+                                                        Gambar <strong>tidak dikenali</strong> oleh sistem.
+                                                    </p>
+                                                    <p class="mb-0 text-muted">
+                                                        Gambar tidak sesuai dengan pola data training. Diperlukan verifikasi manual atau pelatihan ulang model dengan data yang lebih lengkap.
                                                     </p>
                                                 {% endif %}
                                             </div>
