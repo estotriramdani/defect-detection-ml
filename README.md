@@ -10,9 +10,12 @@ Aplikasi web berbasis Flask untuk mendeteksi cacat pada label kemasan menggunaka
 - **Anomaly Detection**: Menggunakan anomaly score untuk meningkatkan akurasi deteksi
 - **Hasil Detail**: Menampilkan prediksi dengan tingkat kepercayaan (confidence score) dan anomaly score
 - **Training Interface**: Web interface untuk upload data training dan training model
+- **🆕 Training Data Management**: Lihat, kelola, dan hapus dataset training dengan mudah
 - **Sample Data Generator**: Script untuk generate sample data training
 - **API Endpoint**: REST API untuk integrasi dengan sistem lain
 - **Real-time Training**: Training model langsung melalui web interface
+
+> 📖 **Panduan Lengkap**: Lihat [`USER_GUIDE.md`](USER_GUIDE.md) untuk tutorial step-by-step penggunaan aplikasi
 
 ## 📁 Struktur Proyek
 
@@ -40,7 +43,8 @@ defect-detection/
 └── templates/                 # Template HTML
     ├── index.html             # Halaman utama
     ├── result.html            # Halaman hasil deteksi (+ unknown support)
-    └── training.html          # Halaman training model
+    └── training.html          # Halaman training model (+ data management)
+├── USER_GUIDE.md              # 🆕 Panduan penggunaan aplikasi untuk end-user
 ```
 
 ## 🛠️ Instalasi dan Setup
@@ -119,8 +123,8 @@ Aplikasi akan berjalan di: `http://localhost:5000`
    ```
 
 3. **Akses Aplikasi**:
-   - Halaman utama: `http://localhost:5000`
-   - Halaman training: `http://localhost:5000/training`
+   - Halaman utama: `http://localhost:5001`
+   - Halaman training: `http://localhost:5001/training`
 
 ### 🧠 Training Model
 
@@ -128,7 +132,7 @@ Aplikasi akan berjalan di: `http://localhost:5000`
 
 1. **Buka Halaman Training**:
    ```
-   http://localhost:5000/training
+   http://localhost:5001/training
    ```
 
 2. **Upload Data Training** (Opsional - sudah ada sample data):
@@ -182,7 +186,7 @@ def create_sample_dataset(good_count=20, defect_count=20):
 ### 🔍 Testing Deteksi
 
 1. **Upload Gambar Test**:
-   - Buka `http://localhost:5000`
+   - Buka `http://localhost:5001`
    - Upload gambar label kemasan
    - Lihat hasil prediksi + confidence score + anomaly score
 
@@ -195,7 +199,7 @@ def create_sample_dataset(good_count=20, defect_count=20):
 3. **Menggunakan API**:
    ```bash
    curl -X POST \
-     http://localhost:5000/api/predict \
+     http://localhost:5001/api/predict \
      -H 'Content-Type: multipart/form-data' \
      -F 'file=@/path/to/your/image.jpg'
    ```
@@ -300,7 +304,7 @@ static/training_data/
 
 #### 2. Upload Data via Web Interface
 
-1. Buka `http://localhost:5000/training`
+1. Buka `http://localhost:5001/training`
 2. Pilih kategori (Good/Defect)
 3. Upload multiple files sekaligus
 4. Sistem akan menghitung total data per kategori
@@ -335,13 +339,42 @@ Training completed!
 
 Atau gunakan web interface untuk training real-time dengan progress monitoring.
 
+### 🗂️ Training Data Management
+
+#### Fitur Baru - Kelola Dataset Training:
+
+**📊 Lihat Training Data:**
+- **Visual Grid**: Tampilan thumbnail semua gambar training
+- **Tab Navigation**: Pisah antara gambar "Good" dan "Defect"  
+- **Detail Info**: Nama file, tanggal upload, ukuran file
+- **Real-time Counter**: Jumlah gambar per kategori
+
+**🗑️ Hapus Data Training:**
+- **Individual Delete**: Hapus gambar satu per satu
+- **Bulk Delete**: Hapus semua gambar per kategori
+- **Clear All**: Hapus seluruh dataset sekaligus
+- **Confirmation Dialog**: Konfirmasi sebelum menghapus
+
+**🔄 Retrain Workflow:**
+1. Upload data baru atau hapus data lama
+2. Lihat counter update real-time
+3. Klik "Mulai Training" untuk retrain model
+4. Monitor progress training
+5. Model ter-update otomatis
+
+**📍 Akses Training Data Management:**
+```
+http://localhost:5001/training
+→ Scroll ke section "Manajemen Data Training"
+```
+
 ## � API Endpoint
 
 ### Prediction API
 
 ```bash
 curl -X POST \
-  http://localhost:5000/api/predict \
+  http://localhost:5001/api/predict \
   -H 'Content-Type: multipart/form-data' \
   -F 'file=@/path/to/your/image.jpg'
 ```
@@ -367,7 +400,7 @@ curl -X POST \
 
 ```bash
 # Get training progress
-curl http://localhost:5000/training_status
+curl http://localhost:5001/training_status
 ```
 
 **Response:**
@@ -460,6 +493,34 @@ python test_unknown_detection.py
 
 ## 📋 Changelog
 
+### 🆕 Version 2.1 - Training Data Management Update (July 15, 2025)
+
+#### ✨ New Features:
+- **🗂️ Training Data Management**: Visual interface untuk melihat dan mengelola dataset
+- **📊 Dataset Visualization**: Grid view dengan thumbnail semua training images
+- **🗑️ Data Management**: Hapus individual images, bulk delete, atau clear all data
+- **📈 Real-time Counters**: Update jumlah data per kategori secara real-time
+- **📋 Image Details**: Info lengkap file (nama, ukuran, tanggal upload)
+- **🔄 Seamless Retrain**: Training ulang langsung setelah mengelola data
+
+#### 🎨 UI/UX Improvements:
+- **Tab Navigation**: Pisah tampilan antara Good dan Defect images
+- **Responsive Design**: Optimal di desktop dan mobile
+- **Confirmation Dialogs**: Prevent accidental data deletion
+- **Empty State Messages**: Informative messages ketika tidak ada data
+
+#### 📋 Management Features:
+- **Individual Delete**: Tombol hapus per gambar dengan konfirmasi
+- **Category Delete**: "Hapus Semua Good" / "Hapus Semua Defect"
+- **Global Delete**: "Hapus Semua Data Training" untuk reset lengkap
+- **Smart Enable/Disable**: Tombol otomatis disable jika tidak ada data
+
+#### 🛠️ Technical Enhancements:
+- **New API Endpoints**: `/delete_training_image`, `/clear_training_data`
+- **Enhanced Error Handling**: Proper error messages dan status codes
+- **DOM Management**: Dynamic update without page reload
+- **File System Operations**: Safe file deletion dengan error handling
+
 ### 🆕 Version 2.0 - Unknown Detection Update (July 15, 2025)
 
 #### ✨ New Features:
@@ -521,7 +582,7 @@ python real_model.py
 python app.py
 ```
 
-Lalu buka: `http://localhost:5000`
+Lalu buka: `http://localhost:5001`
 
 ## 📈 Pengembangan Lebih Lanjut
 
@@ -605,7 +666,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 - **Repository**: [defect-detection-ml](https://github.com/estotriramdani/defect-detection-ml)
 - **Issues**: Gunakan GitHub Issues untuk bug reports dan feature requests
-- **Documentation**: README.md (file ini)
+- **Documentation**: README.md (file ini) + [`USER_GUIDE.md`](USER_GUIDE.md) (panduan pengguna)
+- **Training Data Management**: Dokumentasi lengkap di [`USER_GUIDE.md`](USER_GUIDE.md)
 
 ---
 
@@ -617,7 +679,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 - **🔍 Triple Classification**: Good, Defect, dan Unknown
 - **🧠 Smart Detection**: Anomaly detection untuk gambar yang tidak dikenal
 - **📊 Confidence Scoring**: Dual threshold system untuk akurasi tinggi
-- **🚀 Easy Setup**: One-command setup dan training
+- **�️ Data Management**: Visual interface untuk kelola training dataset
+- **�🚀 Easy Setup**: One-command setup dan training
 - **🌐 Web Interface**: User-friendly untuk non-technical users
 - **🔌 API Ready**: REST API untuk integrasi sistem
 
@@ -643,7 +706,7 @@ source venv/bin/activate && python retrain_model.py && python app.py
 python test_unknown_detection.py
 
 # Access app
-curl -X POST -F 'file=@image.jpg' http://localhost:5000/api/predict
+curl -X POST -F 'file=@image.jpg' http://localhost:5001/api/predict
 ```
 
 **🚀 Ready for Production!** Aplikasi sudah dilengkapi dengan error handling, proper logging, dan scalable architecture.
