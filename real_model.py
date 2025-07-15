@@ -197,8 +197,10 @@ class SimpleDefectDetector:
         else:
             img_uint8 = image_array[0].astype(np.uint8)
         
-        # Convert to PIL Image for feature extraction
+        # Convert to PIL Image
         img = Image.fromarray(img_uint8)
+        
+        # TIDAK PERLU RESIZE LAGI karena sudah 64x64 dari preprocess_image
         temp_path = "temp_prediction.png"
         img.save(temp_path)
         

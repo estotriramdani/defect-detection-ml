@@ -62,9 +62,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def preprocess_image(image_path, target_size=(224, 224)):
+def preprocess_image(image_path, target_size=(64, 64)):
     """
-    Preprocessing gambar untuk input model CNN
+    Preprocessing gambar untuk input model
     
     Args:
         image_path (str): Path ke file gambar
@@ -81,7 +81,7 @@ def preprocess_image(image_path, target_size=(224, 224)):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Resize gambar ke ukuran yang dibutuhkan model
+        # Resize gambar ke ukuran yang sama dengan training (64x64)
         image = image.resize(target_size)
         
         # Konversi ke array numpy

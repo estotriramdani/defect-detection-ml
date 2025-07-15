@@ -1,31 +1,38 @@
 # Deteksi Cacat Label Kemasan - Flask Web Application
 
-Aplikasi web berbasis Flask untuk mendeteksi cacat pada label kemasan menggunakan model CNN (Convolutional Neural Network) dengan TensorFlow.
+Aplikasi web berbasis Flask untuk mendeteksi cacat pada label kemasan menggunakan machine learning dengan ekstraksi fitur gambar dan Random Forest classifier.
 
 ## 🚀 Fitur Utama
 
 - **Upload Gambar**: Interface web yang user-friendly untuk mengunggah gambar label kemasan
-- **Deteksi Otomatis**: Model CNN yang dilatih untuk membedakan label "good" dan "defect"
+- **Deteksi Otomatis**: Model ML yang dilatih untuk membedakan label "good" dan "defect"
 - **Hasil Detail**: Menampilkan prediksi dengan tingkat kepercayaan (confidence score)
+- **Training Interface**: Web interface untuk upload data training dan training model
+- **Sample Data Generator**: Script untuk generate sample data training
 - **API Endpoint**: REST API untuk integrasi dengan sistem lain
-- **Responsive Design**: Tampilan yang optimal di desktop dan mobile
+- **Real-time Training**: Training model langsung melalui web interface
 
 ## 📁 Struktur Proyek
 
 ```
 defect-detection/
-├── app.py              # Aplikasi Flask utama
-├── config.py           # Konfigurasi aplikasi
-├── utils.py            # Fungsi-fungsi utility
-├── create_model.py     # Script untuk membuat model CNN
-├── requirements.txt    # Dependensi Python
-├── models/            # Folder untuk menyimpan model
-│   └── defect_detection_model.h5
-├── static/            # File statis (CSS, JS, images)
-│   └── uploads/       # Folder untuk gambar yang diupload
-└── templates/         # Template HTML
-    ├── index.html     # Halaman utama
-    └── result.html    # Halaman hasil deteksi
+├── app.py                    # Aplikasi Flask utama
+├── real_model.py            # Model ML dengan Random Forest
+├── create_dummy_model.py    # Script untuk membuat dummy model
+├── create_sample_data.py    # Script untuk generate sample data
+├── add_samples.py           # Script untuk menambah sample data
+├── requirements.txt         # Dependensi Python
+├── models/                  # Folder untuk menyimpan model
+│   └── defect_detection_model.pkl
+├── static/                  # File statis
+│   ├── training_data/       # Data training
+│   │   ├── good/           # Sample gambar label baik
+│   │   └── defect/         # Sample gambar label cacat
+│   └── uploads/            # Gambar yang diupload untuk testing
+└── templates/              # Template HTML
+    ├── index.html          # Halaman utama
+    ├── result.html         # Halaman hasil deteksi
+    └── training.html       # Halaman training model
 ```
 
 ## 🛠️ Instalasi dan Setup
@@ -36,7 +43,7 @@ defect-detection/
 cd /home/admin/defect-detection
 ```
 
-### 2. Buat Virtual Environment (Opsional tapi Disarankan)
+### 2. Buat dan Aktifkan Virtual Environment
 
 ```bash
 python3 -m venv venv
@@ -51,17 +58,39 @@ source venv/bin/activate  # Di Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 4. Buat Model CNN (Dummy untuk Testing)
-
+**Note**: Jika ada error dengan TensorFlow, jalankan:
 ```bash
-python create_model.py
+pip install numpy pillow opencv-python-headless scikit-learn
 ```
 
-**Catatan**: Script ini akan membuat model dummy untuk demonstrasi. Untuk penggunaan production, Anda perlu melatih model dengan dataset yang sesuai.
+### 4. Generate Sample Data Training
 
-### 5. Jalankan Aplikasi
+Buat sample data untuk training model:
 
 ```bash
+python create_sample_data.py
+```
+
+Script ini akan membuat:
+- 15 sample gambar "good" (label berkualitas baik)
+- 15 sample gambar "defect" (label dengan cacat)
+- Data disimpan di `static/training_data/good/` dan `static/training_data/defect/`
+
+### 5. Training Model Awal
+
+```bash
+python real_model.py
+```
+
+Atau buat dummy model untuk testing:
+```bash
+python create_dummy_model.py
+```
+
+### 6. Jalankan Aplikasi
+
+```bash
+source venv/bin/activate  # Pastikan venv aktif
 python app.py
 ```
 
@@ -69,16 +98,156 @@ Aplikasi akan berjalan di: `http://localhost:5000`
 
 ## 📖 Cara Penggunaan
 
-### Web Interface
+### 🚀 Running Project
 
-1. Buka browser dan akses `http://localhost:5000`
-2. Upload gambar label kemasan melalui drag & drop atau tombol "Pilih File"
-3. Klik "Analisis Gambar" untuk memulai deteksi
-4. Lihat hasil prediksi beserta tingkat kepercayaan
+1. **Aktifkan Virtual Environment**:
+   ```bash
+   source venv/bin/activate
+   ```
 
-### API Endpoint
+2. **Jalankan Aplikasi**:
+   ```bash
+   python app.py
+   ```
 
-Untuk integrasi dengan aplikasi lain, gunakan endpoint API:
+3. **Akses Aplikasi**:
+   - Halaman utama: `http://localhost:5000`
+   - Halaman training: `http://localhost:5000/training`
+
+### 🧠 Training Model
+
+#### Melalui Web Interface (Recommended):
+
+1. **Buka Halaman Training**:
+   ```
+   http://localhost:5000/training
+   ```
+
+2. **Upload Data Training** (Opsional - sudah ada sample data):
+   - Pilih kategori: "Good" atau "Defect"
+   - Upload multiple files sekaligus
+   - Sistem akan menampilkan jumlah data per kategori
+
+3. **Start Training**:
+   - Klik tombol "Start Training"
+   - Monitor progress real-time
+   - Model akan ter-update otomatis setelah selesai
+
+#### Melalui Command Line:
+
+```bash
+# Training dengan data yang ada
+python real_model.py
+
+# Hasilnya akan tersimpan di models/defect_detection_model.pkl
+```
+
+### 📊 Generate Sample Data
+
+#### Generate Sample Data Baru:
+
+```bash
+# Generate 15 good + 15 defect samples
+python create_sample_data.py
+```
+
+#### Generate Sample Tambahan:
+
+```bash
+# Generate 5 defect samples tambahan
+python add_samples.py
+```
+
+#### Customize Sample Generation:
+
+Edit script `create_sample_data.py` untuk mengubah:
+- Jumlah sample yang di-generate
+- Jenis defect yang disimulasikan
+- Ukuran dan resolusi gambar
+
+```python
+# Di dalam create_sample_data.py
+def create_sample_dataset(good_count=20, defect_count=20):
+    # Ubah parameter sesuai kebutuhan
+```
+
+### 🔍 Testing Deteksi
+
+1. **Upload Gambar Test**:
+   - Buka `http://localhost:5000`
+   - Upload gambar label kemasan
+   - Lihat hasil prediksi + confidence score
+
+2. **Menggunakan API**:
+   ```bash
+   curl -X POST \
+     http://localhost:5000/api/predict \
+     -H 'Content-Type: multipart/form-data' \
+     -F 'file=@/path/to/your/image.jpg'
+   ```
+
+## 🤖 Model Machine Learning
+
+### Arsitektur Model
+
+Model menggunakan **Random Forest Classifier** dengan ekstraksi fitur gambar:
+
+#### Fitur yang Diekstraksi:
+- **RGB Statistics**: Mean dan standard deviation untuk setiap channel
+- **Brightness & Contrast**: Nilai kecerahan dan kontras rata-rata
+- **Edge Detection**: Density dari edge horizontal dan vertikal
+- **Histogram Features**: Distribusi intensitas pixel (5 bins pertama)
+- **Total Features**: 17 fitur per gambar
+
+#### Keunggulan:
+- **Fast Training**: Training lebih cepat dibanding deep learning
+- **Interpretable**: Bisa melihat feature importance
+- **No GPU Required**: Berjalan di CPU biasa
+- **Small Model Size**: File model kecil (~KB)
+
+### Training Model dengan Data Sendiri
+
+#### 1. Siapkan Dataset
+
+Struktur folder yang dibutuhkan:
+```
+static/training_data/
+├── good/          # Gambar label berkualitas baik
+│   ├── good1.jpg
+│   ├── good2.png
+│   └── ...
+└── defect/        # Gambar label dengan cacat
+    ├── defect1.jpg
+    ├── defect2.png
+    └── ...
+```
+
+#### 2. Upload Data via Web Interface
+
+1. Buka `http://localhost:5000/training`
+2. Pilih kategori (Good/Defect)
+3. Upload multiple files sekaligus
+4. Sistem akan menghitung total data per kategori
+
+#### 3. Training Requirements
+
+- **Minimum**: 5 gambar per kategori
+- **Recommended**: 20+ gambar per kategori untuk hasil optimal
+- **Format**: PNG, JPG, JPEG, BMP, GIF
+- **Size**: Maksimal 16MB per file
+
+#### 4. Automatic Training
+
+```bash
+# Training otomatis dengan data yang ada
+python real_model.py
+```
+
+Atau gunakan web interface untuk training real-time dengan progress monitoring.
+
+## � API Endpoint
+
+### Prediction API
 
 ```bash
 curl -X POST \
@@ -87,7 +256,7 @@ curl -X POST \
   -F 'file=@/path/to/your/image.jpg'
 ```
 
-Response JSON:
+**Response JSON:**
 ```json
 {
   "filename": "20250715_143022_abc123.jpg",
@@ -98,66 +267,29 @@ Response JSON:
 }
 ```
 
-## 🔧 Konfigurasi
-
-### Environment Variables
-
-Untuk production, set environment variables berikut:
+### Training Status API
 
 ```bash
-export SECRET_KEY="your-secret-key-here"
-export FLASK_ENV="production"
+# Get training progress
+curl http://localhost:5000/training_status
 ```
 
-### Kustomisasi Model
+**Response:**
+```json
+{
+  "status": "running",
+  "current_step": 2,
+  "message": "Training model...",
+  "results": {}
+}
+```
 
-Edit file `config.py` untuk mengubah:
-- Path model CNN
-- Ukuran maksimum file upload
-- Format file yang diizinkan
-
-## 🎯 Model CNN
-
-### Arsitektur Model
-
-Model menggunakan arsitektur CNN dengan layers:
-- 4 Convolutional layers dengan MaxPooling
-- Dropout layers untuk regularization
-- Dense layers untuk klasifikasi final
-- Output: 2 kelas (good/defect)
-
-### Training Model dengan Data Sendiri
-
-Untuk melatih model dengan dataset Anda:
-
-1. **Siapkan Dataset**:
-   ```
-   dataset/
-   ├── train/
-   │   ├── good/
-   │   └── defect/
-   └── validation/
-       ├── good/
-       └── defect/
-   ```
-
-2. **Modifikasi `create_model.py`** untuk menambahkan:
-   - Data loading dan preprocessing
-   - Training loop
-   - Model evaluation
-   - Model saving
-
-3. **Jalankan Training**:
-   ```bash
-   python create_model.py
-   ```
-
-## 📊 Format Input dan Output
+## �📊 Format Input dan Output
 
 ### Input
 - **Format gambar**: PNG, JPG, JPEG, GIF, BMP
 - **Ukuran maksimum**: 16MB
-- **Resolusi**: Otomatis diresize ke 224x224 pixels
+- **Resolusi**: Otomatis diresize ke 64x64 pixels untuk feature extraction
 
 ### Output
 - **Prediksi**: "good" atau "defect"
@@ -191,32 +323,121 @@ CMD ["python", "app.py"]
 
 ## 🔍 Troubleshooting
 
-### Error "Model tidak tersedia"
-- Pastikan file `models/defect_detection_model.h5` ada
-- Jalankan `python create_model.py` untuk membuat model dummy
+### ❌ Error "Model tidak tersedia"
+**Solusi:**
+```bash
+# Generate dummy model untuk testing
+python create_dummy_model.py
 
-### Error "File terlalu besar"
-- Ubah `MAX_CONTENT_LENGTH` di `config.py`
-- Atau compress gambar sebelum upload
+# Atau training model dengan data real
+python real_model.py
+```
 
-### Error Dependencies
-- Pastikan semua package di `requirements.txt` terinstall
-- Coba update pip: `pip install --upgrade pip`
+### ❌ Error "ModuleNotFoundError"
+**Solusi:**
+```bash
+# Pastikan virtual environment aktif
+source venv/bin/activate
+
+# Install dependencies
+pip install numpy pillow opencv-python-headless scikit-learn
+```
+
+### ❌ Error "No training data found"
+**Solusi:**
+```bash
+# Generate sample data
+python create_sample_data.py
+
+# Atau upload data manual ke static/training_data/good/ dan static/training_data/defect/
+```
+
+### ❌ Error "File terlalu besar"
+**Solusi:**
+- Kompres gambar sebelum upload
+- Atau edit `MAX_CONTENT_LENGTH` di `app.py`
+
+### ❌ Virtual Environment Issues
+**Solusi:**
+```bash
+# Buat ulang virtual environment
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## 🚀 Quick Start Commands
+
+```bash
+# Setup lengkap dari awal
+python3 -m venv venv
+source venv/bin/activate
+pip install numpy pillow opencv-python-headless scikit-learn
+python create_sample_data.py
+python real_model.py
+python app.py
+```
+
+Lalu buka: `http://localhost:5000`
 
 ## 📈 Pengembangan Lebih Lanjut
 
 ### Fitur yang Bisa Ditambahkan
-- **Batch Processing**: Upload multiple images
-- **History**: Menyimpan riwayat prediksi
-- **User Authentication**: Login system
-- **Database Integration**: Menyimpan hasil ke database
-- **Real-time Processing**: WebSocket untuk real-time updates
-- **Model Monitoring**: Tracking performa model
+- **Batch Processing**: Upload multiple images sekaligus
+- **History**: Menyimpan riwayat prediksi di database
+- **User Authentication**: System login dan user management
+- **Advanced Models**: CNN, YOLO untuk object detection
+- **Data Augmentation**: Teknik augmentasi untuk data training
+- **Model Versioning**: Tracking versi model yang berbeda
 
 ### Optimasi Performance
 - **Caching**: Redis untuk cache hasil prediksi
 - **Load Balancing**: Multiple worker processes
-- **GPU Acceleration**: CUDA support untuk inferensi lebih cepat
+- **Async Processing**: Background job untuk training dan prediksi
+- **GPU Support**: Implementasi model deep learning dengan GPU
+
+### Sample Data Customization
+
+Edit `create_sample_data.py` untuk membuat sample data yang lebih realistis:
+
+```python
+def create_sample_defect_image(width=224, height=224):
+    # Tambah jenis defect baru:
+    # - Scratches (goresan)
+    # - Color bleeding (warna luntur) 
+    # - Misalignment (posisi tidak tepat)
+    # - Texture issues (masalah tekstur)
+    pass
+```
+
+### Model Improvement
+
+Untuk akurasi yang lebih baik:
+
+1. **Tambah Feature Engineering**:
+   ```python
+   # Di real_model.py, tambah fitur baru:
+   # - GLCM (texture features)
+   # - LBP (local binary patterns)
+   # - HOG (histogram of gradients)
+   ```
+
+2. **Hyperparameter Tuning**:
+   ```python
+   # Tuning Random Forest parameters
+   model = RandomForestClassifier(
+       n_estimators=200,
+       max_depth=10,
+       min_samples_split=5
+   )
+   ```
+
+3. **Ensemble Methods**:
+   ```python
+   # Kombinasi multiple models
+   from sklearn.ensemble import VotingClassifier
+   ```
 
 ## 📝 Contributing
 
@@ -232,15 +453,36 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 👥 Tim Pengembang
 
-- **Developer**: [Your Name]
-- **AI/ML Engineer**: [Your Name]
-- **UI/UX Designer**: [Your Name]
+- **Developer**: AI Assistant 
+- **ML Engineer**: Random Forest Implementation
+- **Data Scientist**: Feature Engineering & Model Training
+- **Backend Developer**: Flask Application & API
+- **UI/UX**: Web Interface Design
 
 ## 📞 Kontak
 
-- Email: your.email@example.com
-- Project Link: [https://github.com/yourusername/defect-detection](https://github.com/yourusername/defect-detection)
+- **Repository**: [defect-detection-ml](https://github.com/estotriramdani/defect-detection-ml)
+- **Issues**: Gunakan GitHub Issues untuk bug reports dan feature requests
+- **Documentation**: README.md (file ini)
+
+## 📝 Changelog
+
+### Version 1.0.0 (Current)
+- ✅ Basic ML model dengan Random Forest
+- ✅ Web interface untuk upload dan prediksi
+- ✅ Training interface dengan real-time progress
+- ✅ Sample data generator
+- ✅ API endpoints untuk integrasi
+- ✅ Feature extraction dari gambar
+
+### Roadmap
+- 🔄 Deep learning model implementation
+- 🔄 Batch processing capabilities
+- 🔄 Advanced visualization dashboard
+- 🔄 Model performance monitoring
 
 ---
 
-**Dibuat dengan ❤️ menggunakan Flask dan TensorFlow**
+**Dibuat dengan ❤️ menggunakan Flask, scikit-learn, dan Machine Learning**
+
+> 💡 **Tips**: Untuk hasil optimal, gunakan gambar dengan resolusi yang baik dan pastikan label kemasan terlihat jelas. Model ini cocok untuk deteksi cacat visual seperti noda, goresan, robekan, dan masalah kualitas cetak.
