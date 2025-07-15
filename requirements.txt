@@ -1,0 +1,18 @@
+# Dependensi untuk Aplikasi Flask Deteksi Cacat Label
+# Requirement file untuk instalasi package Python
+
+# Flask Web Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Machine Learning & Image Processing
+tensorflow==2.19.0
+numpy==1.24.3
+Pillow==10.0.1
+opencv-python==4.8.1.78
+
+# Utilities
+python-dotenv==1.0.0
+
+# Optional: untuk development
+flask-cors==4.0.0

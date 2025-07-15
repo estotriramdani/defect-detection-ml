@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Model - Deteksi Cacat Label</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+            min-height: 200px;
+        }
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #e7f3ff;
+        }
+        .upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #e7f3ff;
+        }
+        .upload-area.good {
+            border-color: #198754;
+            background-color: #d1e7dd;
+        }
+        .upload-area.defect {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .preview-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .dataset-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        .training-progress {
+            display: none;
+        }
+        .progress-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .progress-step .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        .progress-step.active .step-icon {
+            background: #0d6efd;
+        }
+        .progress-step.completed .step-icon {
+            background: #198754;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>
+                Deteksi Cacat Label
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-camera me-1"></i>
+                    Deteksi
+                </a>
+                <a class="nav-link active" href="/training">
+                    <i class="fas fa-graduation-cap me-1"></i>
+                    Training
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-6 fw-bold text-dark mb-3">
+                    <i class="fas fa-graduation-cap text-primary me-3"></i>
+                    Training Model AI
+                </h1>
+                <p class="lead text-muted">
+                    Upload gambar label untuk melatih model AI. Semakin banyak data, semakin akurat model Anda.
+                </p>
+            </div>
+        </div>
+
+        <!-- Dataset Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="dataset-stats">
+                    <h5><i class="fas fa-chart-bar me-2"></i>Statistik Dataset</h5>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h3 id="goodCount">{{ good_count }}</h3>
+                                <small>Gambar Good</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h3 id="defectCount">{{ defect_count }}</h3>
+                                <small>Gambar Defect</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-info-circle text-info me-2"></i>
+                            Tips Training
+                        </h6>
+                        <ul class="small mb-0">
+                            <li>Upload minimal 10 gambar per kategori</li>
+                            <li>Gunakan gambar dengan kualitas yang baik</li>
+                            <li>Pastikan gambar beragam untuk akurasi tinggi</li>
+                            <li>Format: JPG, PNG, BMP (max 16MB per file)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Areas -->
+        <div class="row">
+            <!-- Good Images Upload -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-thumbs-up me-2"></i>
+                            Upload Gambar "GOOD"
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="goodForm" enctype="multipart/form-data">
+                            <div class="upload-area good" id="goodUploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-success mb-3"></i>
+                                <h6 class="text-success mb-2">Seret gambar GOOD di sini</h6>
+                                <input type="file" id="goodFiles" name="files" multiple accept="image/*" class="d-none">
+                                <button type="button" class="btn btn-success" onclick="document.getElementById('goodFiles').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Pilih File
+                                </button>
+                            </div>
+                        </form>
+                        <div id="goodPreviews" class="preview-grid"></div>
+                        <div class="mt-3">
+                            <button id="uploadGoodBtn" class="btn btn-success btn-sm" style="display: none;">
+                                <i class="fas fa-upload me-2"></i>Upload ke Server
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Defect Images Upload -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Upload Gambar "DEFECT"
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="defectForm" enctype="multipart/form-data">
+                            <div class="upload-area defect" id="defectUploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-danger mb-3"></i>
+                                <h6 class="text-danger mb-2">Seret gambar DEFECT di sini</h6>
+                                <input type="file" id="defectFiles" name="files" multiple accept="image/*" class="d-none">
+                                <button type="button" class="btn btn-danger" onclick="document.getElementById('defectFiles').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Pilih File
+                                </button>
+                            </div>
+                        </form>
+                        <div id="defectPreviews" class="preview-grid"></div>
+                        <div class="mt-3">
+                            <button id="uploadDefectBtn" class="btn btn-danger btn-sm" style="display: none;">
+                                <i class="fas fa-upload me-2"></i>Upload ke Server
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Training Model
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Training Button -->
+                        <div id="trainingControls">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6>Siap untuk melatih model?</h6>
+                                    <small class="text-muted">
+                                        Pastikan Anda sudah upload cukup gambar untuk kedua kategori
+                                    </small>
+                                </div>
+                                <button id="startTrainingBtn" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-play me-2"></i>
+                                    Mulai Training
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Training Progress -->
+                        <div id="trainingProgress" class="training-progress">
+                            <h6 class="mb-4">Progress Training:</h6>
+                            
+                            <div class="progress-step" id="step1">
+                                <div class="step-icon">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Memuat Dataset</h6>
+                                    <small class="text-muted">Memproses gambar training...</small>
+                                </div>
+                            </div>
+
+                            <div class="progress-step" id="step2">
+                                <div class="step-icon">
+                                    <i class="fas fa-cog"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Preprocessing Data</h6>
+                                    <small class="text-muted">Normalisasi dan augmentasi gambar...</small>
+                                </div>
+                            </div>
+
+                            <div class="progress-step" id="step3">
+                                <div class="step-icon">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Training Model</h6>
+                                    <small class="text-muted">Melatih neural network...</small>
+                                    <div class="progress mt-2" style="height: 10px;">
+                                        <div id="trainingProgressBar" class="progress-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="progress-step" id="step4">
+                                <div class="step-icon">
+                                    <i class="fas fa-save"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Menyimpan Model</h6>
+                                    <small class="text-muted">Menyimpan model yang telah dilatih...</small>
+                                </div>
+                            </div>
+
+                            <!-- Training Results -->
+                            <div id="trainingResults" style="display: none;" class="mt-4 p-3 bg-light border-radius">
+                                <h6 class="text-success">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Training Selesai!
+                                </h6>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Akurasi Training:</small>
+                                        <h5 id="trainAccuracy">-</h5>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Akurasi Validasi:</small>
+                                        <h5 id="valAccuracy">-</h5>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Loss:</small>
+                                        <h5 id="finalLoss">-</h5>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">Epochs:</small>
+                                        <h5 id="totalEpochs">-</h5>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="/" class="btn btn-success">
+                                        <i class="fas fa-camera me-2"></i>
+                                        Coba Model Baru
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-copyright me-2"></i>
+                2025 Sistem Deteksi Cacat Label - AI Training Module
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let goodFiles = [];
+        let defectFiles = [];
+
+        // Setup drag and drop for both upload areas
+        setupDragAndDrop('goodUploadArea', 'goodFiles', 'good');
+        setupDragAndDrop('defectUploadArea', 'defectFiles', 'defect');
+
+        // File input handlers
+        document.getElementById('goodFiles').addEventListener('change', function(e) {
+            handleFiles(e.target.files, 'good');
+        });
+
+        document.getElementById('defectFiles').addEventListener('change', function(e) {
+            handleFiles(e.target.files, 'defect');
+        });
+
+        // Upload buttons
+        document.getElementById('uploadGoodBtn').addEventListener('click', function() {
+            uploadFiles('good');
+        });
+
+        document.getElementById('uploadDefectBtn').addEventListener('click', function() {
+            uploadFiles('defect');
+        });
+
+        // Start training button
+        document.getElementById('startTrainingBtn').addEventListener('click', function() {
+            startTraining();
+        });
+
+        function setupDragAndDrop(areaId, inputId, type) {
+            const area = document.getElementById(areaId);
+            
+            area.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+
+            area.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                area.classList.remove('dragover');
+            });
+
+            area.addEventListener('drop', function(e) {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files, type);
+            });
+        }
+
+        function handleFiles(files, type) {
+            const targetArray = type === 'good' ? goodFiles : defectFiles;
+            const previewContainer = document.getElementById(type + 'Previews');
+            const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+
+            // Add files to array
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    targetArray.push(file);
+                }
+            });
+
+            // Update previews
+            updatePreviews(type);
+            
+            // Show upload button if files exist
+            if (targetArray.length > 0) {
+                uploadBtn.style.display = 'block';
+            }
+        }
+
+        function updatePreviews(type) {
+            const files = type === 'good' ? goodFiles : defectFiles;
+            const container = document.getElementById(type + 'Previews');
+            
+            container.innerHTML = '';
+            
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button class="remove-btn" onclick="removeFile('${type}', ${index})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    container.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeFile(type, index) {
+            if (type === 'good') {
+                goodFiles.splice(index, 1);
+            } else {
+                defectFiles.splice(index, 1);
+            }
+            updatePreviews(type);
+            
+            // Hide upload button if no files
+            const files = type === 'good' ? goodFiles : defectFiles;
+            const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+            if (files.length === 0) {
+                uploadBtn.style.display = 'none';
+            }
+        }
+
+        function uploadFiles(type) {
+            const files = type === 'good' ? goodFiles : defectFiles;
+            const formData = new FormData();
+            
+            files.forEach(file => {
+                formData.append('files', file);
+            });
+            formData.append('category', type);
+
+            const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+            uploadBtn.disabled = true;
+
+            fetch('/upload_training_data', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear files and previews
+                    if (type === 'good') {
+                        goodFiles = [];
+                    } else {
+                        defectFiles = [];
+                    }
+                    updatePreviews(type);
+                    
+                    // Update counters
+                    document.getElementById('goodCount').textContent = data.good_count;
+                    document.getElementById('defectCount').textContent = data.defect_count;
+                    
+                    // Reset button
+                    uploadBtn.style.display = 'none';
+                    uploadBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload ke Server';
+                    uploadBtn.disabled = false;
+                    
+                    alert('File berhasil diupload!');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi error saat upload');
+            });
+        }
+
+        function startTraining() {
+            const goodCount = parseInt(document.getElementById('goodCount').textContent);
+            const defectCount = parseInt(document.getElementById('defectCount').textContent);
+            
+            if (goodCount < 5 || defectCount < 5) {
+                alert('Upload minimal 5 gambar untuk setiap kategori sebelum training!');
+                return;
+            }
+
+            // Hide training controls and show progress
+            document.getElementById('trainingControls').style.display = 'none';
+            document.getElementById('trainingProgress').style.display = 'block';
+
+            // Start training process
+            fetch('/start_training', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Monitor training progress
+                    monitorTraining();
+                } else {
+                    alert('Error: ' + data.message);
+                    resetTrainingUI();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi error saat memulai training');
+                resetTrainingUI();
+            });
+        }
+
+        function monitorTraining() {
+            const interval = setInterval(() => {
+                fetch('/training_status')
+                .then(response => response.json())
+                .then(data => {
+                    updateTrainingProgress(data);
+                    
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        showTrainingResults(data.results);
+                    } else if (data.status === 'error') {
+                        clearInterval(interval);
+                        alert('Error during training: ' + data.message);
+                        resetTrainingUI();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error monitoring training:', error);
+                });
+            }, 2000); // Check every 2 seconds
+        }
+
+        function updateTrainingProgress(data) {
+            // Update progress steps
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            const currentStep = data.current_step || 0;
+            
+            steps.forEach((stepId, index) => {
+                const step = document.getElementById(stepId);
+                if (index < currentStep) {
+                    step.classList.add('completed');
+                    step.classList.remove('active');
+                } else if (index === currentStep) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+
+            // Update training progress bar
+            if (data.epoch && data.total_epochs) {
+                const progress = (data.epoch / data.total_epochs) * 100;
+                document.getElementById('trainingProgressBar').style.width = progress + '%';
+            }
+        }
+
+        function showTrainingResults(results) {
+            document.getElementById('trainAccuracy').textContent = (results.train_accuracy * 100).toFixed(1) + '%';
+            document.getElementById('valAccuracy').textContent = (results.val_accuracy * 100).toFixed(1) + '%';
+            document.getElementById('finalLoss').textContent = results.final_loss.toFixed(4);
+            document.getElementById('totalEpochs').textContent = results.epochs;
+            
+            document.getElementById('trainingResults').style.display = 'block';
+        }
+
+        function resetTrainingUI() {
+            document.getElementById('trainingControls').style.display = 'block';
+            document.getElementById('trainingProgress').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

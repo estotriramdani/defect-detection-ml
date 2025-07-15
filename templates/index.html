@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deteksi Cacat Label Kemasan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+        }
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #e7f3ff;
+        }
+        .upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #e7f3ff;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>
+                Deteksi Cacat Label
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <!-- Header Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center">
+                <h1 class="display-4 fw-bold text-dark mb-3">
+                    <i class="fas fa-camera-retro text-primary me-3"></i>
+                    Deteksi Cacat Label Kemasan
+                </h1>
+                <p class="lead text-muted">
+                    Gunakan teknologi AI untuk mendeteksi cacat pada label kemasan produk Anda
+                    dengan akurasi tinggi menggunakan model CNN TensorFlow.
+                </p>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white text-center py-3">
+                        <h4 class="mb-0">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload Gambar Label
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Upload Form -->
+                        <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted mb-3">Seret dan lepas gambar di sini</h5>
+                                <p class="text-muted mb-3">atau</p>
+                                <input type="file" name="file" id="fileInput" class="d-none" accept="image/*" required>
+                                <button type="button" class="btn btn-outline-primary btn-lg" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open me-2"></i>
+                                    Pilih File
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Format yang didukung: PNG, JPG, JPEG, GIF, BMP (Maksimal 16MB)
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Preview Area -->
+                            <div id="previewArea" class="mt-4 text-center d-none">
+                                <h6 class="text-muted mb-3">Preview Gambar:</h6>
+                                <img id="previewImage" class="preview-image mb-3" alt="Preview">
+                                <div>
+                                    <button type="submit" class="btn btn-success btn-lg me-2">
+                                        <i class="fas fa-search me-2"></i>
+                                        Analisis Gambar
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="resetUpload()">
+                                        <i class="fas fa-times me-2"></i>
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Loading Animation -->
+                        <div id="loadingArea" class="text-center mt-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3 text-muted">Sedang menganalisis gambar...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mt-5">
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100 border-0 shadow feature-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">AI Technology</h5>
+                        <p class="card-text text-muted">
+                            Menggunakan model CNN TensorFlow yang telah dilatih untuk mendeteksi cacat dengan akurasi tinggi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100 border-0 shadow feature-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Cepat & Akurat</h5>
+                        <p class="card-text text-muted">
+                            Analisis gambar dalam hitungan detik dengan tingkat akurasi yang dapat diandalkan.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100 border-0 shadow feature-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Quality Control</h5>
+                        <p class="card-text text-muted">
+                            Membantu kontrol kualitas produksi dengan deteksi otomatis cacat pada label kemasan.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-copyright me-2"></i>
+                2025 Sistem Deteksi Cacat Label. Dibuat dengan Flask & TensorFlow.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Event listener untuk file input
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                previewFile(file);
+            }
+        });
+
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('uploadArea');
+
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    document.getElementById('fileInput').files = files;
+                    previewFile(file);
+                } else {
+                    alert('Mohon upload file gambar yang valid.');
+                }
+            }
+        });
+
+        // Function untuk preview gambar
+        function previewFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('previewArea').classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Function untuk reset upload
+        function resetUpload() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('previewArea').classList.add('d-none');
+            document.getElementById('loadingArea').classList.add('d-none');
+        }
+
+        // Form submit dengan loading animation
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Mohon pilih file gambar terlebih dahulu.');
+                return;
+            }
+            
+            document.getElementById('previewArea').classList.add('d-none');
+            document.getElementById('loadingArea').classList.remove('d-none');
+        });
+    </script>
+</body>
+</html>

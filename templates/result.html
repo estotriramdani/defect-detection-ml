@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Deteksi - Deteksi Cacat Label</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .result-card {
+            transition: all 0.3s ease;
+        }
+        .result-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .confidence-bar {
+            height: 20px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #ff4757, #ffa502, #2ed573);
+        }
+        .prediction-good {
+            color: #2ed573;
+            background-color: #f1f9f4;
+            border: 2px solid #2ed573;
+        }
+        .prediction-defect {
+            color: #ff4757;
+            background-color: #fff1f2;
+            border: 2px solid #ff4757;
+        }
+        .confidence-meter {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto;
+        }
+        .confidence-meter svg {
+            transform: rotate(-90deg);
+        }
+        .animate-result {
+            animation: slideInUp 0.6s ease-out;
+        }
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>
+                Deteksi Cacat Label
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home me-1"></i>
+                    Kembali ke Beranda
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <!-- Header -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-10 text-center">
+                <h1 class="display-5 fw-bold text-dark mb-3">
+                    <i class="fas fa-chart-line text-primary me-3"></i>
+                    Hasil Analisis
+                </h1>
+                <p class="lead text-muted">
+                    Berikut adalah hasil deteksi cacat pada gambar yang Anda upload
+                </p>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="row justify-content-center animate-result">
+            <div class="col-lg-10">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <!-- Image Display -->
+                            <div class="col-lg-6 mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-image me-2"></i>
+                                    Gambar yang Dianalisis
+                                </h5>
+                                <div class="text-center">
+                                    <img src="{{ url_for('static', filename='uploads/' + filename) }}" 
+                                         alt="Uploaded Image" class="result-image">
+                                    <div class="mt-3">
+                                        <small class="text-muted">File: {{ filename }}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Results Display -->
+                            <div class="col-lg-6">
+                                <h5 class="mb-4">
+                                    <i class="fas fa-analytics me-2"></i>
+                                    Hasil Deteksi
+                                </h5>
+
+                                <!-- Status Check -->
+                                {% if status == 'success' %}
+                                    <!-- Prediction Result -->
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Status Label:</label>
+                                        {% if prediction == 'good' %}
+                                            <div class="alert prediction-good text-center py-3">
+                                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                                <h4 class="mb-0 fw-bold">GOOD</h4>
+                                                <small>Label dalam kondisi baik</small>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert prediction-defect text-center py-3">
+                                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                                <h4 class="mb-0 fw-bold">DEFECT</h4>
+                                                <small>Terdeteksi cacat pada label</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Confidence Score -->
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Tingkat Kepercayaan:</label>
+                                        <div class="d-flex align-items-center">
+                                            <div class="confidence-meter me-3">
+                                                <svg width="120" height="120">
+                                                    <circle cx="60" cy="60" r="50" 
+                                                            fill="none" 
+                                                            stroke="#e9ecef" 
+                                                            stroke-width="8"/>
+                                                    <circle cx="60" cy="60" r="50" 
+                                                            fill="none" 
+                                                            stroke="{% if prediction == 'good' %}#2ed573{% else %}#ff4757{% endif %}" 
+                                                            stroke-width="8"
+                                                            stroke-linecap="round"
+                                                            stroke-dasharray="314.16" 
+                                                            stroke-dashoffset="{{ 314.16 - (314.16 * confidence) }}"/>
+                                                </svg>
+                                                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                                    <h4 class="mb-0 fw-bold">{{ "%.1f"|format(confidence * 100) }}%</h4>
+                                                    <small class="text-muted">Confidence</small>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar {% if prediction == 'good' %}bg-success{% else %}bg-danger{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {{ confidence * 100 }}%"
+                                                         aria-valuenow="{{ confidence * 100 }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                        {{ "%.1f"|format(confidence * 100) }}%
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    {% if confidence >= 0.9 %}
+                                                        Sangat Yakin
+                                                    {% elif confidence >= 0.7 %}
+                                                        Cukup Yakin
+                                                    {% else %}
+                                                        Kurang Yakin
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Interpretation -->
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Interpretasi:</label>
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                {% if prediction == 'good' %}
+                                                    <p class="mb-2">
+                                                        <i class="fas fa-thumbs-up text-success me-2"></i>
+                                                        Label kemasan dalam kondisi <strong>baik</strong> dan memenuhi standar kualitas.
+                                                    </p>
+                                                    <p class="mb-0 text-muted">
+                                                        Produk dapat dilanjutkan ke tahap berikutnya dalam proses produksi.
+                                                    </p>
+                                                {% else %}
+                                                    <p class="mb-2">
+                                                        <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                                                        Terdeteksi <strong>cacat</strong> pada label kemasan.
+                                                    </p>
+                                                    <p class="mb-0 text-muted">
+                                                        Disarankan untuk melakukan pemeriksaan manual dan tindakan korektif.
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                {% else %}
+                                    <!-- Error Display -->
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Error:</strong> {{ status }}
+                                    </div>
+                                {% endif %}
+
+                                <!-- Action Buttons -->
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                                    <a href="/" class="btn btn-primary btn-lg me-md-2">
+                                        <i class="fas fa-upload me-2"></i>
+                                        Analisis Gambar Lain
+                                    </a>
+                                    <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
+                                        <i class="fas fa-print me-2"></i>
+                                        Cetak Hasil
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Details -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-10">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Detail Teknis
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <small class="text-muted">Model:</small><br>
+                                <strong>CNN TensorFlow</strong>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Prediksi:</small><br>
+                                <strong>{{ prediction|title }}</strong>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Confidence:</small><br>
+                                <strong>{{ "%.4f"|format(confidence) }}</strong>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Status:</small><br>
+                                <strong>{{ status|title }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-copyright me-2"></i>
+                2025 Sistem Deteksi Cacat Label. Dibuat dengan Flask & TensorFlow.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Animate confidence meter on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const circle = document.querySelector('circle[stroke-dasharray]');
+            if (circle) {
+                const confidenceValue = parseFloat('{{ confidence }}');
+                const circumference = 314.16;
+                const offset = circumference - (circumference * confidenceValue);
+                
+                // Start animation from 0
+                circle.style.strokeDashoffset = circumference;
+                
+                // Animate to target value
+                setTimeout(function() {
+                    circle.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
+                    circle.style.strokeDashoffset = offset;
+                }, 500);
+            }
+        });
+
+        // Auto-scroll to result on mobile
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                document.querySelector('.animate-result').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
