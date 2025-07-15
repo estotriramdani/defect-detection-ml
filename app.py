@@ -11,13 +11,12 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, f
 from werkzeug.utils import secure_filename
 import pickle
 from PIL import Image
-import cv2
 from datetime import datetime
 import threading
 import json
 
-# Import dummy model class
-from create_dummy_model import DummyModel
+# Import model class
+from real_model import SimpleDefectDetector
 
 # Konfigurasi aplikasi Flask
 app = Flask(__name__)
@@ -44,7 +43,7 @@ MODEL_PATH = 'models/defect_detection_model.pkl'
 
 # Memuat model saat aplikasi dimulai
 try:
-    model = DummyModel.load(MODEL_PATH)
+    model = SimpleDefectDetector.load(MODEL_PATH)
     print("Model berhasil dimuat")
 except Exception as e:
     print(f"Error memuat model: {e}")
@@ -404,43 +403,41 @@ def train_model_background():
         training_status['current_step'] = 0
         training_status['message'] = 'Memuat dataset...'
         
-        # Simulasi loading dataset
         import time
-        time.sleep(2)
+        from real_model import SimpleDefectDetector
+        
+        time.sleep(1)
         
         # Step 2: Preprocessing
         training_status['current_step'] = 1
         training_status['message'] = 'Preprocessing data...'
-        time.sleep(2)
+        time.sleep(1)
         
         # Step 3: Training
         training_status['current_step'] = 2
         training_status['message'] = 'Training model...'
         
-        # Simulasi training dengan epochs
-        total_epochs = training_status['total_epochs']
-        for epoch in range(total_epochs):
-            training_status['epoch'] = epoch + 1
-            time.sleep(1)  # Simulasi waktu training per epoch
+        # Training model sesungguhnya
+        detector = SimpleDefectDetector()
+        results = detector.train(app.config['TRAINING_DATA_FOLDER'])
         
         # Step 4: Saving model
         training_status['current_step'] = 3
         training_status['message'] = 'Menyimpan model...'
-        time.sleep(2)
+        time.sleep(1)
         
-        # Membuat model baru dengan data training
-        create_trained_model()
+        # Simpan model
+        detector.save(MODEL_PATH)
+        
+        # Update global model
+        global model
+        model = detector
         
         # Training selesai
         training_status['status'] = 'completed'
         training_status['current_step'] = 4
         training_status['message'] = 'Training selesai!'
-        training_status['results'] = {
-            'train_accuracy': 0.95,  # Simulasi hasil
-            'val_accuracy': 0.92,
-            'final_loss': 0.15,
-            'epochs': total_epochs
-        }
+        training_status['results'] = results
         
     except Exception as e:
         training_status['status'] = 'error'
@@ -455,8 +452,7 @@ def create_trained_model():
         counts = count_training_images()
         
         # Buat model baru
-        new_model = DummyModel()
-        new_model.model_name = "Trained CNN Model"
+        new_model = SimpleDefectDetector()
         new_model.training_data_count = counts
         new_model.trained_at = datetime.now()
         
