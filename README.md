@@ -123,8 +123,8 @@ Aplikasi akan berjalan di: `http://localhost:5000`
    ```
 
 3. **Akses Aplikasi**:
-   - Halaman utama: `http://localhost:5001`
-   - Halaman training: `http://localhost:5001/training`
+   - Halaman utama: `http://localhost:5000`
+   - Halaman training: `http://localhost:5000/training`
 
 ### 🧠 Training Model
 
@@ -132,7 +132,7 @@ Aplikasi akan berjalan di: `http://localhost:5000`
 
 1. **Buka Halaman Training**:
    ```
-   http://localhost:5001/training
+   http://localhost:5000/training
    ```
 
 2. **Upload Data Training** (Opsional - sudah ada sample data):
@@ -186,7 +186,7 @@ def create_sample_dataset(good_count=20, defect_count=20):
 ### 🔍 Testing Deteksi
 
 1. **Upload Gambar Test**:
-   - Buka `http://localhost:5001`
+   - Buka `http://localhost:5000`
    - Upload gambar label kemasan
    - Lihat hasil prediksi + confidence score + anomaly score
 
@@ -199,7 +199,7 @@ def create_sample_dataset(good_count=20, defect_count=20):
 3. **Menggunakan API**:
    ```bash
    curl -X POST \
-     http://localhost:5001/api/predict \
+     http://localhost:5000/api/predict \
      -H 'Content-Type: multipart/form-data' \
      -F 'file=@/path/to/your/image.jpg'
    ```
@@ -304,7 +304,7 @@ static/training_data/
 
 #### 2. Upload Data via Web Interface
 
-1. Buka `http://localhost:5001/training`
+1. Buka `http://localhost:5000/training`
 2. Pilih kategori (Good/Defect)
 3. Upload multiple files sekaligus
 4. Sistem akan menghitung total data per kategori
@@ -364,7 +364,7 @@ Atau gunakan web interface untuk training real-time dengan progress monitoring.
 
 **📍 Akses Training Data Management:**
 ```
-http://localhost:5001/training
+http://localhost:5000/training
 → Scroll ke section "Manajemen Data Training"
 ```
 
@@ -374,7 +374,7 @@ http://localhost:5001/training
 
 ```bash
 curl -X POST \
-  http://localhost:5001/api/predict \
+  http://localhost:5000/api/predict \
   -H 'Content-Type: multipart/form-data' \
   -F 'file=@/path/to/your/image.jpg'
 ```
@@ -400,7 +400,7 @@ curl -X POST \
 
 ```bash
 # Get training progress
-curl http://localhost:5001/training_status
+curl http://localhost:5000/training_status
 ```
 
 **Response:**
@@ -582,7 +582,7 @@ python real_model.py
 python app.py
 ```
 
-Lalu buka: `http://localhost:5001`
+Lalu buka: `http://localhost:5000`
 
 ## 📈 Pengembangan Lebih Lanjut
 
@@ -706,7 +706,7 @@ source venv/bin/activate && python retrain_model.py && python app.py
 python test_unknown_detection.py
 
 # Access app
-curl -X POST -F 'file=@image.jpg' http://localhost:5001/api/predict
+curl -X POST -F 'file=@image.jpg' http://localhost:5000/api/predict
 ```
 
 **🚀 Ready for Production!** Aplikasi sudah dilengkapi dengan error handling, proper logging, dan scalable architecture.
