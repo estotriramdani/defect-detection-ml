@@ -3,8 +3,14 @@
 Script untuk melatih ulang model dengan fitur anomaly detection
 """
 
-from real_model import SimpleDefectDetector
 import os
+import sys
+
+from real_model import SimpleDefectDetector
+
+# Pastikan output UTF-8 agar emoji tidak error di konsol Windows (cp1252)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 def retrain_model():
     print("🚀 Memulai pelatihan ulang model dengan fitur anomaly detection...")

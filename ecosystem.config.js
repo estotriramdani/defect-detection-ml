@@ -6,8 +6,11 @@ module.exports = {
       interpreter: 'venv/bin/python',
       watch: false,
       env: {
-        // You can add environment variables here if needed
-        // Example: "FLASK_ENV": "production"
+        FLASK_DEBUG: '0',
+        PORT: 5001,
+        // Set SECRET_KEY dan ADMIN_PASSWORD di server production:
+        // SECRET_KEY: '...',
+        // ADMIN_PASSWORD: '...',
       },
       cwd: __dirname,
       autorestart: true,

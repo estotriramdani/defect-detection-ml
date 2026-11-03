@@ -5,10 +5,13 @@ Script untuk menguji deteksi "unknown" pada gambar yang tidak sesuai training da
 
 import os
 import sys
-sys.path.append('.')
 
-from app import predict_defect
-from real_model import SimpleDefectDetector
+sys.path.append('.')
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
+from app import app
+from services import model_service
 
 def test_unknown_detection():
     print("🧪 Testing Unknown Detection...")
@@ -26,8 +29,12 @@ def test_unknown_detection():
             
         print(f"\n📸 Testing: {image_path}")
         
-        # Predict using the app function
-        result = predict_defect(image_path)
+        # Predict using the app service
+        result = model_service.predict_defect(
+            image_path,
+            app.config['CONFIDENCE_THRESHOLD'],
+            app.config['ANOMALY_THRESHOLD'],
+        )
         
         print(f"   🔍 Prediction: {result['prediction']}")
         print(f"   📊 Confidence: {result['confidence']:.3f}")

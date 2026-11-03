@@ -458,12 +458,12 @@
                                         <h5 id="valAccuracy">-</h5>
                                     </div>
                                     <div class="col-md-3">
-                                        <small class="text-muted">Loss:</small>
-                                        <h5 id="finalLoss">-</h5>
+                                        <small class="text-muted">Data Latih:</small>
+                                        <h5 id="trainSamples">-</h5>
                                     </div>
                                     <div class="col-md-3">
-                                        <small class="text-muted">Epochs:</small>
-                                        <h5 id="totalEpochs">-</h5>
+                                        <small class="text-muted">Data Uji:</small>
+                                        <h5 id="testSamples">-</h5>
                                     </div>
                                 </div>
                                 <div class="mt-3">
@@ -727,19 +727,17 @@
                 }
             });
 
-            // Update training progress bar
-            if (data.epoch && data.total_epochs) {
-                const progress = (data.epoch / data.total_epochs) * 100;
-                document.getElementById('trainingProgressBar').style.width = progress + '%';
-            }
+            // Update training progress bar berdasarkan langkah training
+            const progress = Math.min((currentStep / 4) * 100, 100);
+            document.getElementById('trainingProgressBar').style.width = progress + '%';
         }
 
         function showTrainingResults(results) {
-            document.getElementById('trainAccuracy').textContent = (results.train_accuracy * 100).toFixed(1) + '%';
-            document.getElementById('valAccuracy').textContent = (results.val_accuracy * 100).toFixed(1) + '%';
-            document.getElementById('finalLoss').textContent = results.final_loss.toFixed(4);
-            document.getElementById('totalEpochs').textContent = results.epochs;
-            
+            document.getElementById('trainAccuracy').textContent = ((results.train_accuracy ?? 0) * 100).toFixed(1) + '%';
+            document.getElementById('valAccuracy').textContent = ((results.val_accuracy ?? 0) * 100).toFixed(1) + '%';
+            document.getElementById('trainSamples').textContent = results.train_samples ?? '-';
+            document.getElementById('testSamples').textContent = results.test_samples ?? '-';
+
             document.getElementById('trainingResults').style.display = 'block';
         }
 

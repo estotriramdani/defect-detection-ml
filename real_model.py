@@ -13,6 +13,10 @@ import pickle
 from datetime import datetime
 
 class SimpleDefectDetector:
+    # Jumlah fitur yang diekstraksi: 3 mean RGB + 3 std RGB + brightness +
+    # contrast + 2 edge density + 5 bin histogram.
+    N_FEATURES = 15
+
     def __init__(self):
         self.model = RandomForestClassifier(n_estimators=100, random_state=42)
         self.classes = ['good', 'defect']
@@ -22,10 +26,60 @@ class SimpleDefectDetector:
         # Store training features for anomaly detection
         self.training_features = None
         self.feature_stats = None
-        
+        # Precomputed values untuk anomaly scoring (diisi saat training/load)
+        self.anomaly_reference = None
+        self._normalized_training = None
+
+    def _extract_features_from_image(self, image):
+        """
+        Ekstraksi fitur dari objek PIL.Image (tanpa file sementara).
+
+        Args:
+            image (PIL.Image.Image): Gambar yang akan diekstraksi
+
+        Returns:
+            np.array: Array fitur
+        """
+        img = image.convert('RGB').resize((64, 64))
+        img_array = np.array(img)
+
+        features = []
+
+        # 1. Mean RGB values
+        features.extend([
+            np.mean(img_array[:, :, 0]),  # Red mean
+            np.mean(img_array[:, :, 1]),  # Green mean
+            np.mean(img_array[:, :, 2])   # Blue mean
+        ])
+
+        # 2. Standard deviation RGB
+        features.extend([
+            np.std(img_array[:, :, 0]),   # Red std
+            np.std(img_array[:, :, 1]),   # Green std
+            np.std(img_array[:, :, 2])    # Blue std
+        ])
+
+        # 3. Brightness dan contrast
+        gray = np.mean(img_array, axis=2)
+        features.append(np.mean(gray))        # Brightness
+        features.append(np.std(gray))         # Contrast
+
+        # 4. Edge density (simplified)
+        edges_x = np.abs(np.diff(gray, axis=1))
+        edges_y = np.abs(np.diff(gray, axis=0))
+        features.append(np.mean(edges_x))     # Horizontal edges
+        features.append(np.mean(edges_y))     # Vertical edges
+
+        # 5. Histogram features (simplified)
+        hist, _ = np.histogram(gray.flatten(), bins=10, range=(0, 255))
+        hist = hist / np.sum(hist)  # Normalize
+        features.extend(hist[:5])   # First 5 bins
+
+        return np.array(features, dtype=float)
+
     def extract_features(self, image_path):
         """
-        Ekstraksi fitur dasar dari gambar
+        Ekstraksi fitur dasar dari file gambar
         
         Args:
             image_path (str): Path ke file gambar
@@ -34,51 +88,10 @@ class SimpleDefectDetector:
             np.array: Array fitur
         """
         try:
-            # Buka gambar
-            img = Image.open(image_path).convert('RGB')
-            
-            # Resize ke ukuran standar
-            img = img.resize((64, 64))
-            img_array = np.array(img)
-            
-            # Ekstraksi fitur:
-            features = []
-            
-            # 1. Mean RGB values
-            features.extend([
-                np.mean(img_array[:, :, 0]),  # Red mean
-                np.mean(img_array[:, :, 1]),  # Green mean
-                np.mean(img_array[:, :, 2])   # Blue mean
-            ])
-            
-            # 2. Standard deviation RGB
-            features.extend([
-                np.std(img_array[:, :, 0]),   # Red std
-                np.std(img_array[:, :, 1]),   # Green std
-                np.std(img_array[:, :, 2])    # Blue std
-            ])
-            
-            # 3. Brightness dan contrast
-            gray = np.mean(img_array, axis=2)
-            features.append(np.mean(gray))        # Brightness
-            features.append(np.std(gray))         # Contrast
-            
-            # 4. Edge density (simplified)
-            edges_x = np.abs(np.diff(gray, axis=1))
-            edges_y = np.abs(np.diff(gray, axis=0))
-            features.append(np.mean(edges_x))     # Horizontal edges
-            features.append(np.mean(edges_y))     # Vertical edges
-            
-            # 5. Histogram features (simplified)
-            hist, _ = np.histogram(gray.flatten(), bins=10, range=(0, 255))
-            hist = hist / np.sum(hist)  # Normalize
-            features.extend(hist[:5])   # First 5 bins
-            
-            return np.array(features)
-            
+            return self._extract_features_from_image(Image.open(image_path))
         except Exception as e:
             print(f"Error extracting features from {image_path}: {e}")
-            return np.zeros(17)  # Return zero features if error
+            return np.zeros(self.N_FEATURES)  # Return zero features if error
     
     def load_training_data(self, data_folder):
         """
@@ -154,6 +167,8 @@ class SimpleDefectDetector:
             'min': np.min(features, axis=0),
             'max': np.max(features, axis=0)
         }
+        # Precompute normalized features + referensi jarak (sekali per training)
+        self._prepare_anomaly_reference()
         
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
@@ -187,6 +202,37 @@ class SimpleDefectDetector:
         
         return results
     
+    def _prepare_anomaly_reference(self):
+        """
+        Hitung nilai referensi anomaly dari data training satu kali.
+
+        Menyimpan fitur training yang sudah dinormalisasi dan persentil ke-90
+        dari rata-rata jarak antar-sampel training. Dengan begitu, setiap
+        prediksi hanya perlu menghitung jarak ke sampel training (O(n)), bukan
+        menghitung ulang seluruh matriks jarak (O(n^2)).
+        """
+        if self.training_features is None or self.feature_stats is None:
+            self._normalized_training = None
+            self.anomaly_reference = None
+            return
+
+        mean = self.feature_stats['mean']
+        std = self.feature_stats['std']
+        self._normalized_training = (self.training_features - mean) / (std + 1e-8)
+
+        n_samples = len(self._normalized_training)
+        if n_samples < 2:
+            self.anomaly_reference = 1.0
+            return
+
+        # Jarak antar-sampel training (n x n)
+        diff = self._normalized_training[:, None, :] - self._normalized_training[None, :, :]
+        distances = np.linalg.norm(diff, axis=2)
+        np.fill_diagonal(distances, np.nan)
+        mean_distances = np.nanmean(distances, axis=1)
+
+        self.anomaly_reference = float(np.percentile(mean_distances, 90))
+
     def calculate_anomaly_score(self, features):
         """
         Calculate anomaly score based on distance from training data
@@ -199,30 +245,23 @@ class SimpleDefectDetector:
         """
         if self.training_features is None or self.feature_stats is None:
             return 0.5  # Return neutral score if no training data
-        
+
+        # Pastikan nilai precomputed tersedia (mis. model lama hasil unpickle)
+        if self._normalized_training is None or self.anomaly_reference is None:
+            self._prepare_anomaly_reference()
+
         # Normalize features using training statistics
-        normalized_features = (features - self.feature_stats['mean']) / (self.feature_stats['std'] + 1e-8)
-        
-        # Calculate average distance to training samples
-        normalized_training = (self.training_features - self.feature_stats['mean']) / (self.feature_stats['std'] + 1e-8)
-        
-        distances = np.linalg.norm(normalized_training - normalized_features, axis=1)
-        avg_distance = np.mean(distances)
-        min_distance = np.min(distances)
-        
-        # Calculate percentile of current distance among training distances
-        training_distances = []
-        for i in range(len(self.training_features)):
-            other_distances = np.linalg.norm(normalized_training - normalized_training[i], axis=1)
-            training_distances.append(np.mean(other_distances[other_distances > 0]))
-        
-        training_distances = np.array(training_distances)
-        percentile = np.percentile(training_distances, 90)  # 90th percentile
-        
+        normalized_features = (features - self.feature_stats['mean']) / (
+            self.feature_stats['std'] + 1e-8
+        )
+
+        # Rata-rata jarak ke seluruh sampel training
+        distances = np.linalg.norm(self._normalized_training - normalized_features, axis=1)
+        avg_distance = float(np.mean(distances))
+
+        reference = self.anomaly_reference or 1.0
         # Anomaly score: higher if distance is much larger than typical training distances
-        anomaly_score = min(avg_distance / (percentile + 1e-8), 3.0)  # Cap at 3.0
-        
-        return anomaly_score
+        return float(min(avg_distance / (reference + 1e-8), 3.0))  # Cap at 3.0
     
     def predict(self, image_array):
         """
@@ -248,36 +287,25 @@ class SimpleDefectDetector:
         
         # Convert to PIL Image
         img = Image.fromarray(img_uint8)
-        
-        # TIDAK PERLU RESIZE LAGI karena sudah 64x64 dari preprocess_image
-        temp_path = "temp_prediction.png"
-        img.save(temp_path)
-        
-        try:
-            features = self.extract_features(temp_path)
-            features = features.reshape(1, -1)
-            
-            # Calculate anomaly score
-            anomaly_score = self.calculate_anomaly_score(features[0])
-            
-            # Get probabilities
-            proba = self.model.predict_proba(features)[0]
-            
-            # Adjust confidence based on anomaly score
-            # Higher anomaly score = lower confidence
-            confidence_multiplier = max(0.1, 1.0 - (anomaly_score - 1.0) * 0.3)
-            adjusted_proba = proba * confidence_multiplier
-            
-            # Renormalize to sum to 1
-            adjusted_proba = adjusted_proba / np.sum(adjusted_proba)
-            
-            # Return as [prob_good, prob_defect] and anomaly score
-            return np.array([adjusted_proba]), anomaly_score
-            
-        finally:
-            # Clean up temp file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+
+        # Ekstraksi fitur langsung dari memori (tanpa file sementara)
+        features = self._extract_features_from_image(img).reshape(1, -1)
+
+        # Calculate anomaly score
+        anomaly_score = self.calculate_anomaly_score(features[0])
+
+        # Get probabilities
+        proba = self.model.predict_proba(features)[0]
+
+        # Turunkan confidence saat anomaly tinggi dengan mencampur probabilitas
+        # ke distribusi uniform. (Mengalikan semua probabilitas dengan konstanta
+        # tidak berpengaruh karena hasilnya dinormalisasi kembali.)
+        penalty = float(np.clip((anomaly_score - 1.0) * 0.3, 0.0, 0.6))
+        uniform = np.full_like(proba, 1.0 / len(proba))
+        adjusted_proba = proba * (1.0 - penalty) + uniform * penalty
+
+        # Return as [prob_good, prob_defect] and anomaly score
+        return np.array([adjusted_proba]), anomaly_score
     
     def save(self, filepath):
         """
@@ -294,6 +322,7 @@ class SimpleDefectDetector:
             'trained_at': self.trained_at,
             'training_features': self.training_features,
             'feature_stats': self.feature_stats,
+            'anomaly_reference': self.anomaly_reference,
             'model_type': 'SimpleDefectDetector'
         }
         
@@ -327,7 +356,13 @@ class SimpleDefectDetector:
             detector.trained_at = model_data.get('trained_at')
             detector.training_features = model_data.get('training_features')
             detector.feature_stats = model_data.get('feature_stats')
-            
+
+            # Hitung ulang nilai precomputed anomaly (juga untuk model lama
+            # yang belum menyimpannya di file pickle).
+            detector._prepare_anomaly_reference()
+            if model_data.get('anomaly_reference') is not None:
+                detector.anomaly_reference = float(model_data['anomaly_reference'])
+
             print(f"Model loaded from: {filepath}")
             return detector
             

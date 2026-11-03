@@ -4,10 +4,16 @@ Membuat variasi good dan defect dari gambar base
 """
 
 import os
+import sys
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 import random
 from datetime import datetime
+
+# Pastikan output UTF-8 agar emoji tidak error di konsol Windows (cp1252)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 def load_base_image(base_path):
     """
@@ -326,7 +332,7 @@ if __name__ == "__main__":
     if success:
         print(f"\n🎉 Ready for training!")
         print(f"💡 Next steps:")
-        print(f"   1. Run: python real_model.py")
-        print(f"   2. Or use web interface: http://localhost:5000/training")
+        print(f"   1. Run: python retrain_model.py")
+        print(f"   2. Or use web interface: http://localhost:5001/training")
     else:
         print(f"\n❌ Failed to generate training data")
