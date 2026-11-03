@@ -1,892 +1,748 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training Model - Deteksi Cacat Label</title>
-    <link rel="icon" href="data:,">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .upload-area {
-            border: 2px dashed #dee2e6;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            transition: all 0.3s ease;
-            background-color: #f8f9fa;
-            min-height: 200px;
-        }
-        .upload-area:hover {
-            border-color: #0d6efd;
-            background-color: #e7f3ff;
-        }
-        .upload-area.dragover {
-            border-color: #0d6efd;
-            background-color: #e7f3ff;
-        }
-        .upload-area.good {
-            border-color: #198754;
-            background-color: #d1e7dd;
-        }
-        .upload-area.defect {
-            border-color: #dc3545;
-            background-color: #f8d7da;
-        }
-        .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .preview-item {
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .preview-item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-        }
-        .preview-item .remove-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(220, 53, 69, 0.8);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .dataset-stats {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 20px;
-        }
-        .training-progress {
-            display: none;
-        }
-        .progress-step {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .progress-step .step-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #6c757d;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-        }
-        .progress-step.active .step-icon {
-            background: #0d6efd;
-        }
-        .progress-step.completed .step-icon {
-            background: #198754;
-        }
-    </style>
-</head>
-<body class="bg-light">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-search me-2"></i>
-                Deteksi Cacat Label
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">
-                    <i class="fas fa-camera me-1"></i>
-                    Deteksi
-                </a>
-                <a class="nav-link active" href="/training">
-                    <i class="fas fa-graduation-cap me-1"></i>
-                    Training
-                </a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="display-6 fw-bold text-dark mb-3">
-                    <i class="fas fa-graduation-cap text-primary me-3"></i>
-                    Training Model AI
-                </h1>
-                <p class="lead text-muted">
-                    Upload gambar label untuk melatih model AI. Semakin banyak data, semakin akurat model Anda.
-                </p>
-            </div>
-        </div>
+{% block title %}Training Model - Deteksi Cacat Label{% endblock %}
 
-        <!-- Dataset Statistics -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="dataset-stats">
-                    <h5><i class="fas fa-chart-bar me-2"></i>Statistik Dataset</h5>
-                    <div class="row mt-3">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h3 id="goodCount">{{ good_count }}</h3>
-                                <small>Gambar Good</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h3 id="defectCount">{{ defect_count }}</h3>
-                                <small>Gambar Defect</small>
-                            </div>
-                        </div>
+{% block local_nav %}
+<div class="local-nav">
+    <div class="local-nav__inner">
+        <span class="local-nav__title">Training Model</span>
+        <div class="local-nav__actions">
+            <a class="btn btn--outline btn--sm" href="{{ url_for('main.index') }}">Deteksi</a>
+            <a class="btn btn--primary btn--sm" href="#training-section">Mulai Training</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <p class="kicker reveal">Machine learning</p>
+        <h1 class="page-title reveal">Latih model dengan data Anda.</h1>
+        <p class="lede reveal reveal--delay">
+            Tambahkan gambar label berkualitas dan cacat, lalu latih ulang model.
+            Semakin beragam datanya, semakin baik hasil deteksinya.
+        </p>
+    </div>
+</section>
+
+<section class="band section--tight" style="margin-top:48px">
+    <div class="container">
+        <div class="grid grid--2">
+            <article class="stat-card reveal">
+                <p class="eyebrow">Dataset saat ini</p>
+                <div class="stat-grid">
+                    <div>
+                        <div class="stat__value" id="goodCount">{{ good_count }}</div>
+                        <div class="stat__label">Gambar good</div>
+                    </div>
+                    <div>
+                        <div class="stat__value" id="defectCount">{{ defect_count }}</div>
+                        <div class="stat__label">Gambar defect</div>
                     </div>
                 </div>
+            </article>
+
+            <article class="card card--pad-lg reveal reveal--delay">
+                <h2 class="card-title">Sebelum memulai</h2>
+                <ul class="tips">
+                    <li>Upload minimal 10 gambar untuk setiap kategori.</li>
+                    <li>Gunakan gambar dengan pencahayaan dan kualitas yang baik.</li>
+                    <li>Pastikan variasi gambar cukup untuk akurasi yang lebih tinggi.</li>
+                    <li>Format JPG, PNG, atau BMP dengan ukuran maksimal 16 MB per file.</li>
+                </ul>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-head__copy">
+                <p class="eyebrow">Data training</p>
+                <h2 class="section-title">Tambahkan gambar referensi.</h2>
             </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="fas fa-info-circle text-info me-2"></i>
-                            Tips Training
-                        </h6>
-                        <ul class="small mb-0">
-                            <li>Upload minimal 10 gambar per kategori</li>
-                            <li>Gunakan gambar dengan kualitas yang baik</li>
-                            <li>Pastikan gambar beragam untuk akurasi tinggi</li>
-                            <li>Format: JPG, PNG, BMP (max 16MB per file)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            <a class="link" href="#dataset">Kelola dataset &rsaquo;</a>
         </div>
 
-        <!-- Upload Areas -->
-        <div class="row">
-            <!-- Good Images Upload -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-thumbs-up me-2"></i>
-                            Upload Gambar "GOOD"
-                        </h5>
+        <div class="grid grid--2">
+            <article class="card upload-card">
+                <div class="upload-card__head">
+                    <span class="tag">GOOD</span>
+                    <h2 class="card-title">Label berkualitas</h2>
+                    <p class="small muted" style="margin:0">
+                        Contoh label yang lolos standar kualitas produksi.
+                    </p>
+                </div>
+
+                <form id="goodForm" enctype="multipart/form-data">
+                    <div class="dropzone dropzone--compact" id="goodUploadArea" role="button" tabindex="0"
+                         aria-label="Pilih atau seret gambar GOOD ke area ini">
+                        <span class="dropzone__icon">
+                            <svg class="icon icon--lg" aria-hidden="true"><use href="#i-upload"></use></svg>
+                        </span>
+                        <h3 class="dropzone__title" style="font-size:17px">Seret gambar GOOD di sini</h3>
+                        <p class="dropzone__hint">atau pilih beberapa file sekaligus</p>
+                        <span class="btn btn--outline">Pilih File</span>
+                        <input type="file" id="goodFiles" name="files" multiple accept="image/*" hidden>
                     </div>
-                    <div class="card-body">
-                        <form id="goodForm" enctype="multipart/form-data">
-                            <div class="upload-area good" id="goodUploadArea">
-                                <i class="fas fa-cloud-upload-alt fa-2x text-success mb-3"></i>
-                                <h6 class="text-success mb-2">Seret gambar GOOD di sini</h6>
-                                <input type="file" id="goodFiles" name="files" multiple accept="image/*" class="d-none">
-                                <button type="button" class="btn btn-success" onclick="document.getElementById('goodFiles').click()">
-                                    <i class="fas fa-folder-open me-2"></i>Pilih File
-                                </button>
-                            </div>
-                        </form>
-                        <div id="goodPreviews" class="preview-grid"></div>
-                        <div class="mt-3">
-                            <button id="uploadGoodBtn" class="btn btn-success btn-sm" style="display: none;">
-                                <i class="fas fa-upload me-2"></i>Upload ke Server
+                </form>
+
+                <div id="goodPreviews" class="preview-grid"></div>
+
+                <button id="uploadGoodBtn" class="btn btn--primary btn--sm" style="display: none;">
+                    <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                    Upload ke Server
+                </button>
+            </article>
+
+            <article class="card upload-card">
+                <div class="upload-card__head">
+                    <span class="tag tag--defect">DEFECT</span>
+                    <h2 class="card-title">Label cacat</h2>
+                    <p class="small muted" style="margin:0">
+                        Contoh label dengan goresan, cetakan pudar, atau posisi tidak tepat.
+                    </p>
+                </div>
+
+                <form id="defectForm" enctype="multipart/form-data">
+                    <div class="dropzone dropzone--compact" id="defectUploadArea" role="button" tabindex="0"
+                         aria-label="Pilih atau seret gambar DEFECT ke area ini">
+                        <span class="dropzone__icon">
+                            <svg class="icon icon--lg" aria-hidden="true"><use href="#i-upload"></use></svg>
+                        </span>
+                        <h3 class="dropzone__title" style="font-size:17px">Seret gambar DEFECT di sini</h3>
+                        <p class="dropzone__hint">atau pilih beberapa file sekaligus</p>
+                        <span class="btn btn--outline">Pilih File</span>
+                        <input type="file" id="defectFiles" name="files" multiple accept="image/*" hidden>
+                    </div>
+                </form>
+
+                <div id="defectPreviews" class="preview-grid"></div>
+
+                <button id="uploadDefectBtn" class="btn btn--primary btn--sm" style="display: none;">
+                    <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                    Upload ke Server
+                </button>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="dataset" style="padding-top:0">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-head__copy">
+                <p class="eyebrow">Dataset</p>
+                <h2 class="section-title">Manajemen data training.</h2>
+            </div>
+            <p class="small muted" style="margin:0;max-width:340px">
+                Tinjau gambar yang sudah tersimpan, hapus yang tidak relevan, atau bersihkan seluruh dataset.
+            </p>
+        </div>
+
+        <div class="card card--pad-lg">
+            <div class="tabs" role="tablist" aria-label="Kategori data training">
+                <button class="tab is-active" id="good-tab" type="button" role="tab"
+                        aria-selected="true" data-tab="good-images">
+                    Gambar Good (<span id="goodTabCount">{{ good_count }}</span>)
+                </button>
+                <button class="tab" id="defect-tab" type="button" role="tab"
+                        aria-selected="false" data-tab="defect-images">
+                    Gambar Defect (<span id="defectTabCount">{{ defect_count }}</span>)
+                </button>
+            </div>
+
+            <div class="tab-panel is-active" id="good-images" role="tabpanel" aria-labelledby="good-tab">
+                <div class="dataset-toolbar">
+                    <h3 class="dataset-toolbar__title">Gambar good quality</h3>
+                    <button class="btn btn--danger btn--sm" type="button"
+                            onclick="clearCategoryData('good')" {% if good_count == 0 %}disabled{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                        Hapus semua good
+                    </button>
+                </div>
+
+                <div id="goodImagesList" class="media-grid">
+                    {% for image in good_images %}
+                    <article class="media-card" id="image-good-{{ loop.index0 }}">
+                        <div class="media-card__frame">
+                            <img src="{{ url_for('static', filename='training_data/good/' + image.filename) }}"
+                                 alt="{{ image.filename }}" loading="lazy">
+                        </div>
+                        <div class="media-card__body">
+                            <p class="media-card__name" title="{{ image.filename }}">{{ image.filename }}</p>
+                            <p class="media-card__meta">{{ image.created }} &middot; {{ "%.1f"|format(image.size / 1024) }} KB</p>
+                            <button class="btn btn--danger btn--sm btn--block" type="button"
+                                    data-category="good"
+                                    data-filename="{{ image.filename }}"
+                                    data-index="{{ loop.index0 }}"
+                                    onclick="deleteImage(this)">
+                                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                Hapus
                             </button>
                         </div>
+                    </article>
+                    {% else %}
+                    <div class="empty-state" style="grid-column:1 / -1">
+                        Belum ada gambar good yang diupload.
                     </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <!-- Defect Images Upload -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Upload Gambar "DEFECT"
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="defectForm" enctype="multipart/form-data">
-                            <div class="upload-area defect" id="defectUploadArea">
-                                <i class="fas fa-cloud-upload-alt fa-2x text-danger mb-3"></i>
-                                <h6 class="text-danger mb-2">Seret gambar DEFECT di sini</h6>
-                                <input type="file" id="defectFiles" name="files" multiple accept="image/*" class="d-none">
-                                <button type="button" class="btn btn-danger" onclick="document.getElementById('defectFiles').click()">
-                                    <i class="fas fa-folder-open me-2"></i>Pilih File
-                                </button>
-                            </div>
-                        </form>
-                        <div id="defectPreviews" class="preview-grid"></div>
-                        <div class="mt-3">
-                            <button id="uploadDefectBtn" class="btn btn-danger btn-sm" style="display: none;">
-                                <i class="fas fa-upload me-2"></i>Upload ke Server
+            <div class="tab-panel" id="defect-images" role="tabpanel" aria-labelledby="defect-tab">
+                <div class="dataset-toolbar">
+                    <h3 class="dataset-toolbar__title">Gambar defect</h3>
+                    <button class="btn btn--danger btn--sm" type="button"
+                            onclick="clearCategoryData('defect')" {% if defect_count == 0 %}disabled{% endif %}>
+                        <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                        Hapus semua defect
+                    </button>
+                </div>
+
+                <div id="defectImagesList" class="media-grid">
+                    {% for image in defect_images %}
+                    <article class="media-card" id="image-defect-{{ loop.index0 }}">
+                        <div class="media-card__frame">
+                            <img src="{{ url_for('static', filename='training_data/defect/' + image.filename) }}"
+                                 alt="{{ image.filename }}" loading="lazy">
+                        </div>
+                        <div class="media-card__body">
+                            <p class="media-card__name" title="{{ image.filename }}">{{ image.filename }}</p>
+                            <p class="media-card__meta">{{ image.created }} &middot; {{ "%.1f"|format(image.size / 1024) }} KB</p>
+                            <button class="btn btn--danger btn--sm btn--block" type="button"
+                                    data-category="defect"
+                                    data-filename="{{ image.filename }}"
+                                    data-index="{{ loop.index0 }}"
+                                    onclick="deleteImage(this)">
+                                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                                Hapus
                             </button>
                         </div>
+                    </article>
+                    {% else %}
+                    <div class="empty-state" style="grid-column:1 / -1">
+                        Belum ada gambar defect yang diupload.
                     </div>
+                    {% endfor %}
                 </div>
             </div>
+
+            <div class="actions" style="justify-content:center;margin-top:32px">
+                <button class="btn btn--danger" type="button" onclick="clearAllData()"
+                        {% if good_count == 0 and defect_count == 0 %}disabled{% endif %}>
+                    <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                    Hapus semua data training
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="training-section" style="padding-top:0">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-head__copy">
+                <p class="eyebrow">Pelatihan</p>
+                <h2 class="section-title">Latih ulang model.</h2>
+            </div>
+            <p class="small muted" style="margin:0;max-width:340px">
+                Proses berjalan di server. Anda dapat memantau setiap tahapnya di bawah ini.
+            </p>
         </div>
 
-        <!-- Training Data Management Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-images me-2"></i>
-                            Manajemen Data Training
-                        </h5>
+        <div class="card card--pad-lg">
+            <div id="trainingControls" class="row-between">
+                <div>
+                    <h3 class="card-title">Siap untuk melatih model?</h3>
+                    <p class="small muted" style="margin:8px 0 0">
+                        Pastikan jumlah gambar untuk kedua kategori sudah mencukupi.
+                    </p>
+                </div>
+                <button id="startTrainingBtn" class="btn btn--primary btn--lg" type="button">
+                    <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+                    Mulai Training
+                </button>
+            </div>
+
+            <div id="trainingProgress" class="training-progress">
+                <p class="eyebrow" style="margin-bottom:24px">Progress training</p>
+
+                <div class="progress-step" id="step1">
+                    <div class="step-icon">
+                        <svg class="icon" aria-hidden="true"><use href="#i-database"></use></svg>
                     </div>
-                    <div class="card-body">
-                        <!-- Navigation tabs -->
-                        <ul class="nav nav-tabs" id="trainingDataTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="good-tab" data-bs-toggle="tab" data-bs-target="#good-images" type="button" role="tab">
-                                    <i class="fas fa-thumbs-up text-success me-2"></i>
-                                    Gambar Good (<span id="goodTabCount">{{ good_count }}</span>)
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="defect-tab" data-bs-toggle="tab" data-bs-target="#defect-images" type="button" role="tab">
-                                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-                                    Gambar Defect (<span id="defectTabCount">{{ defect_count }}</span>)
-                                </button>
-                            </li>
-                        </ul>
+                    <div>
+                        <h6>Memuat dataset</h6>
+                        <small>Memproses gambar training&hellip;</small>
+                    </div>
+                </div>
 
-                        <!-- Tab content -->
-                        <div class="tab-content mt-3" id="trainingDataTabContent">
-                            <!-- Good Images Tab -->
-                            <div class="tab-pane fade show active" id="good-images" role="tabpanel">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0">Gambar Good Quality</h6>
-                                    <button class="btn btn-danger btn-sm" onclick="clearCategoryData('good')" 
-                                            {% if good_count == 0 %}disabled{% endif %}>
-                                        <i class="fas fa-trash me-2"></i>Hapus Semua Good
-                                    </button>
-                                </div>
-                                <div id="goodImagesList" class="row">
-                                    {% for image in good_images %}
-                                    <div class="col-md-3 col-sm-4 col-6 mb-3" id="image-good-{{ loop.index0 }}">
-                                        <div class="card border-success">
-                                            <img src="{{ url_for('static', filename='training_data/good/' + image.filename) }}" 
-                                                 class="card-img-top" style="height: 150px; object-fit: cover;" 
-                                                 alt="{{ image.filename }}">
-                                            <div class="card-body p-2">
-                                                <p class="card-text small mb-1" title="{{ image.filename }}">
-                                                    {{ image.filename[:20] }}{% if image.filename|length > 20 %}...{% endif %}
-                                                </p>
-                                                <small class="text-muted">{{ image.created }}</small>
-                                                <br>
-                                                <small class="text-muted">{{ "%.1f"|format(image.size / 1024) }} KB</small>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-danger btn-sm w-100" 
-                                                            data-category="good" 
-                                                            data-filename="{{ image.filename }}"
-                                                            data-index="{{ loop.index0 }}"
-                                                            onclick="deleteImage(this)">
-                                                        <i class="fas fa-trash"></i> Hapus
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="col-12">
-                                        <div class="alert alert-info text-center">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Belum ada gambar good yang diupload
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                <div class="progress-step" id="step2">
+                    <div class="step-icon">
+                        <svg class="icon" aria-hidden="true"><use href="#i-cog"></use></svg>
+                    </div>
+                    <div>
+                        <h6>Preprocessing data</h6>
+                        <small>Normalisasi dan ekstraksi fitur gambar&hellip;</small>
+                    </div>
+                </div>
 
-                            <!-- Defect Images Tab -->
-                            <div class="tab-pane fade" id="defect-images" role="tabpanel">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0">Gambar Defect</h6>
-                                    <button class="btn btn-danger btn-sm" onclick="clearCategoryData('defect')" 
-                                            {% if defect_count == 0 %}disabled{% endif %}>
-                                        <i class="fas fa-trash me-2"></i>Hapus Semua Defect
-                                    </button>
-                                </div>
-                                <div id="defectImagesList" class="row">
-                                    {% for image in defect_images %}
-                                    <div class="col-md-3 col-sm-4 col-6 mb-3" id="image-defect-{{ loop.index0 }}">
-                                        <div class="card border-danger">
-                                            <img src="{{ url_for('static', filename='training_data/defect/' + image.filename) }}" 
-                                                 class="card-img-top" style="height: 150px; object-fit: cover;" 
-                                                 alt="{{ image.filename }}">
-                                            <div class="card-body p-2">
-                                                <p class="card-text small mb-1" title="{{ image.filename }}">
-                                                    {{ image.filename[:20] }}{% if image.filename|length > 20 %}...{% endif %}
-                                                </p>
-                                                <small class="text-muted">{{ image.created }}</small>
-                                                <br>
-                                                <small class="text-muted">{{ "%.1f"|format(image.size / 1024) }} KB</small>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-danger btn-sm w-100" 
-                                                            data-category="defect" 
-                                                            data-filename="{{ image.filename }}"
-                                                            data-index="{{ loop.index0 }}"
-                                                            onclick="deleteImage(this)">
-                                                        <i class="fas fa-trash"></i> Hapus
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="col-12">
-                                        <div class="alert alert-info text-center">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Belum ada gambar defect yang diupload
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Clear All Data Button -->
-                        <div class="mt-4 text-center">
-                            <button class="btn btn-outline-danger" onclick="clearAllData()" 
-                                    {% if good_count == 0 and defect_count == 0 %}disabled{% endif %}>
-                                <i class="fas fa-trash-alt me-2"></i>
-                                Hapus Semua Data Training
-                            </button>
+                <div class="progress-step" id="step3">
+                    <div class="step-icon">
+                        <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                    </div>
+                    <div>
+                        <h6>Training model</h6>
+                        <small>Melatih model Random Forest&hellip;</small>
+                        <div class="progress">
+                            <div id="trainingProgressBar" class="progress-bar"></div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Training Section -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-cogs me-2"></i>
-                            Training Model
-                        </h5>
+                <div class="progress-step" id="step4">
+                    <div class="step-icon">
+                        <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
                     </div>
-                    <div class="card-body">
-                        <!-- Training Button -->
-                        <div id="trainingControls">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                    <h6>Siap untuk melatih model?</h6>
-                                    <small class="text-muted">
-                                        Pastikan Anda sudah upload cukup gambar untuk kedua kategori
-                                    </small>
-                                </div>
-                                <button id="startTrainingBtn" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-play me-2"></i>
-                                    Mulai Training
-                                </button>
-                            </div>
+                    <div>
+                        <h6>Menyimpan model</h6>
+                        <small>Menyimpan model yang telah dilatih&hellip;</small>
+                    </div>
+                </div>
+
+                <div id="trainingResults" class="training-results" style="display: none;">
+                    <h6>
+                        <svg class="icon" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><use href="#i-check"></use></svg>
+                        Training selesai
+                    </h6>
+                    <div class="result-stats">
+                        <div class="spec">
+                            <span class="spec__label">Akurasi training</span>
+                            <p class="spec__value" id="trainAccuracy">-</p>
                         </div>
-
-                        <!-- Training Progress -->
-                        <div id="trainingProgress" class="training-progress">
-                            <h6 class="mb-4">Progress Training:</h6>
-                            
-                            <div class="progress-step" id="step1">
-                                <div class="step-icon">
-                                    <i class="fas fa-database"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Memuat Dataset</h6>
-                                    <small class="text-muted">Memproses gambar training...</small>
-                                </div>
-                            </div>
-
-                            <div class="progress-step" id="step2">
-                                <div class="step-icon">
-                                    <i class="fas fa-cog"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Preprocessing Data</h6>
-                                    <small class="text-muted">Normalisasi dan augmentasi gambar...</small>
-                                </div>
-                            </div>
-
-                            <div class="progress-step" id="step3">
-                                <div class="step-icon">
-                                    <i class="fas fa-brain"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Training Model</h6>
-                                    <small class="text-muted">Melatih neural network...</small>
-                                    <div class="progress mt-2" style="height: 10px;">
-                                        <div id="trainingProgressBar" class="progress-bar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="progress-step" id="step4">
-                                <div class="step-icon">
-                                    <i class="fas fa-save"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">Menyimpan Model</h6>
-                                    <small class="text-muted">Menyimpan model yang telah dilatih...</small>
-                                </div>
-                            </div>
-
-                            <!-- Training Results -->
-                            <div id="trainingResults" style="display: none;" class="mt-4 p-3 bg-light border-radius">
-                                <h6 class="text-success">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    Training Selesai!
-                                </h6>
-                                <div class="row mt-3">
-                                    <div class="col-md-3">
-                                        <small class="text-muted">Akurasi Training:</small>
-                                        <h5 id="trainAccuracy">-</h5>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <small class="text-muted">Akurasi Validasi:</small>
-                                        <h5 id="valAccuracy">-</h5>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <small class="text-muted">Data Latih:</small>
-                                        <h5 id="trainSamples">-</h5>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <small class="text-muted">Data Uji:</small>
-                                        <h5 id="testSamples">-</h5>
-                                    </div>
-                                </div>
-                                <div class="mt-3">
-                                    <a href="/" class="btn btn-success">
-                                        <i class="fas fa-camera me-2"></i>
-                                        Coba Model Baru
-                                    </a>
-                                </div>
-                            </div>
+                        <div class="spec">
+                            <span class="spec__label">Akurasi validasi</span>
+                            <p class="spec__value" id="valAccuracy">-</p>
+                        </div>
+                        <div class="spec">
+                            <span class="spec__label">Data latih</span>
+                            <p class="spec__value" id="trainSamples">-</p>
+                        </div>
+                        <div class="spec">
+                            <span class="spec__label">Data uji</span>
+                            <p class="spec__value" id="testSamples">-</p>
                         </div>
                     </div>
+                    <a href="{{ url_for('main.index') }}#upload" class="btn btn--primary">
+                        <svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg>
+                        Coba Model Baru
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+</section>
+{% endblock %}
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4 mt-5">
-        <div class="container">
-            <p class="mb-0">
-                <i class="fas fa-copyright me-2"></i>
-                2025 Sistem Deteksi Cacat Label - AI Training Module
-            </p>
-        </div>
-    </footer>
+{% block scripts %}
+<script>
+    let goodFiles = [];
+    let defectFiles = [];
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let goodFiles = [];
-        let defectFiles = [];
+    // Drag and drop untuk kedua area upload.
+    setupDragAndDrop('goodUploadArea', 'goodFiles', 'good');
+    setupDragAndDrop('defectUploadArea', 'defectFiles', 'defect');
 
-        // Setup drag and drop for both upload areas
-        setupDragAndDrop('goodUploadArea', 'goodFiles', 'good');
-        setupDragAndDrop('defectUploadArea', 'defectFiles', 'defect');
-
-        // File input handlers
-        document.getElementById('goodFiles').addEventListener('change', function(e) {
-            handleFiles(e.target.files, 'good');
-        });
-
-        document.getElementById('defectFiles').addEventListener('change', function(e) {
-            handleFiles(e.target.files, 'defect');
-        });
-
-        // Upload buttons
-        document.getElementById('uploadGoodBtn').addEventListener('click', function() {
-            uploadFiles('good');
-        });
-
-        document.getElementById('uploadDefectBtn').addEventListener('click', function() {
-            uploadFiles('defect');
-        });
-
-        // Start training button
-        document.getElementById('startTrainingBtn').addEventListener('click', function() {
-            startTraining();
-        });
-
-        function setupDragAndDrop(areaId, inputId, type) {
-            const area = document.getElementById(areaId);
-            
-            area.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                area.classList.add('dragover');
-            });
-
-            area.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                area.classList.remove('dragover');
-            });
-
-            area.addEventListener('drop', function(e) {
-                e.preventDefault();
-                area.classList.remove('dragover');
-                handleFiles(e.dataTransfer.files, type);
-            });
+    // Klik area upload membuka file picker.
+    document.getElementById('goodUploadArea').addEventListener('click', function (event) {
+        if (event.target.id !== 'goodFiles') {
+            document.getElementById('goodFiles').click();
         }
+    });
 
-        function handleFiles(files, type) {
-            const targetArray = type === 'good' ? goodFiles : defectFiles;
-            const previewContainer = document.getElementById(type + 'Previews');
-            const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+    document.getElementById('defectUploadArea').addEventListener('click', function (event) {
+        if (event.target.id !== 'defectFiles') {
+            document.getElementById('defectFiles').click();
+        }
+    });
 
-            // Add files to array
-            Array.from(files).forEach(file => {
-                if (file.type.startsWith('image/')) {
-                    targetArray.push(file);
+    // File input handlers.
+    document.getElementById('goodFiles').addEventListener('change', function (event) {
+        handleFiles(event.target.files, 'good');
+    });
+
+    document.getElementById('defectFiles').addEventListener('change', function (event) {
+        handleFiles(event.target.files, 'defect');
+    });
+
+    // Upload buttons.
+    document.getElementById('uploadGoodBtn').addEventListener('click', function () {
+        uploadFiles('good');
+    });
+
+    document.getElementById('uploadDefectBtn').addEventListener('click', function () {
+        uploadFiles('defect');
+    });
+
+    // Start training button.
+    document.getElementById('startTrainingBtn').addEventListener('click', function () {
+        startTraining();
+    });
+
+    // Tabs dataset.
+    document.querySelectorAll('.tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            const target = tab.getAttribute('data-tab');
+
+            document.querySelectorAll('.tab').forEach(function (item) {
+                const isActive = item === tab;
+                item.classList.toggle('is-active', isActive);
+                item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            document.querySelectorAll('.tab-panel').forEach(function (panel) {
+                panel.classList.toggle('is-active', panel.id === target);
+            });
+        });
+    });
+
+    function setupDragAndDrop(areaId, inputId, type) {
+        const area = document.getElementById(areaId);
+
+        area.addEventListener('dragover', function (event) {
+            event.preventDefault();
+            area.classList.add('is-dragover');
+        });
+
+        area.addEventListener('dragleave', function (event) {
+            event.preventDefault();
+            area.classList.remove('is-dragover');
+        });
+
+        area.addEventListener('drop', function (event) {
+            event.preventDefault();
+            area.classList.remove('is-dragover');
+            handleFiles(event.dataTransfer.files, type);
+        });
+
+        area.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                document.getElementById(inputId).click();
+            }
+        });
+    }
+
+    function handleFiles(files, type) {
+        const targetArray = type === 'good' ? goodFiles : defectFiles;
+        const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+
+        Array.from(files).forEach(function (file) {
+            if (file.type.startsWith('image/')) {
+                targetArray.push(file);
+            }
+        });
+
+        updatePreviews(type);
+
+        if (targetArray.length > 0) {
+            uploadBtn.style.display = 'inline-flex';
+        }
+    }
+
+    function updatePreviews(type) {
+        const files = type === 'good' ? goodFiles : defectFiles;
+        const container = document.getElementById(type + 'Previews');
+
+        container.innerHTML = '';
+
+        files.forEach(function (file, index) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.innerHTML = `
+                    <img src="${event.target.result}" alt="Preview">
+                    <button class="remove-btn" type="button" onclick="removeFile('${type}', ${index})">
+                        <svg class="icon" style="width:12px;height:12px" aria-hidden="true"><use href="#i-x"></use></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function removeFile(type, index) {
+        if (type === 'good') {
+            goodFiles.splice(index, 1);
+        } else {
+            defectFiles.splice(index, 1);
+        }
+        updatePreviews(type);
+
+        const files = type === 'good' ? goodFiles : defectFiles;
+        const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+        if (files.length === 0) {
+            uploadBtn.style.display = 'none';
+        }
+    }
+
+    function uploadFiles(type) {
+        const files = type === 'good' ? goodFiles : defectFiles;
+        const formData = new FormData();
+
+        files.forEach(function (file) {
+            formData.append('files', file);
+        });
+        formData.append('category', type);
+
+        const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
+        uploadBtn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> Uploading...';
+        uploadBtn.disabled = true;
+
+        fetch('/upload_training_data', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (data.success) {
+                if (type === 'good') {
+                    goodFiles = [];
+                } else {
+                    defectFiles = [];
                 }
-            });
+                updatePreviews(type);
 
-            // Update previews
-            updatePreviews(type);
-            
-            // Show upload button if files exist
-            if (targetArray.length > 0) {
-                uploadBtn.style.display = 'block';
-            }
-        }
+                document.getElementById('goodCount').textContent = data.good_count;
+                document.getElementById('defectCount').textContent = data.defect_count;
+                document.getElementById('goodTabCount').textContent = data.good_count;
+                document.getElementById('defectTabCount').textContent = data.defect_count;
 
-        function updatePreviews(type) {
-            const files = type === 'good' ? goodFiles : defectFiles;
-            const container = document.getElementById(type + 'Previews');
-            
-            container.innerHTML = '';
-            
-            files.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'preview-item';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="Preview">
-                        <button class="remove-btn" onclick="removeFile('${type}', ${index})">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-                    container.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function removeFile(type, index) {
-            if (type === 'good') {
-                goodFiles.splice(index, 1);
-            } else {
-                defectFiles.splice(index, 1);
-            }
-            updatePreviews(type);
-            
-            // Hide upload button if no files
-            const files = type === 'good' ? goodFiles : defectFiles;
-            const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
-            if (files.length === 0) {
                 uploadBtn.style.display = 'none';
+                uploadBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg> Upload ke Server';
+                uploadBtn.disabled = false;
+
+                alert('File berhasil diupload!');
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
             }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            alert('Terjadi error saat upload');
+        });
+    }
+
+    function startTraining() {
+        const goodCount = parseInt(document.getElementById('goodCount').textContent);
+        const defectCount = parseInt(document.getElementById('defectCount').textContent);
+
+        if (goodCount < 5 || defectCount < 5) {
+            alert('Upload minimal 5 gambar untuk setiap kategori sebelum training!');
+            return;
         }
 
-        function uploadFiles(type) {
-            const files = type === 'good' ? goodFiles : defectFiles;
-            const formData = new FormData();
-            
-            files.forEach(file => {
-                formData.append('files', file);
-            });
-            formData.append('category', type);
+        document.getElementById('trainingControls').style.display = 'none';
+        document.getElementById('trainingProgress').style.display = 'block';
 
-            const uploadBtn = document.getElementById('upload' + type.charAt(0).toUpperCase() + type.slice(1) + 'Btn');
-            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
-            uploadBtn.disabled = true;
-
-            fetch('/upload_training_data', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Clear files and previews
-                    if (type === 'good') {
-                        goodFiles = [];
-                    } else {
-                        defectFiles = [];
-                    }
-                    updatePreviews(type);
-                    
-                    // Update counters
-                    document.getElementById('goodCount').textContent = data.good_count;
-                    document.getElementById('defectCount').textContent = data.defect_count;
-                    document.getElementById('goodTabCount').textContent = data.good_count;
-                    document.getElementById('defectTabCount').textContent = data.defect_count;
-                    
-                    // Reset button
-                    uploadBtn.style.display = 'none';
-                    uploadBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload ke Server';
-                    uploadBtn.disabled = false;
-                    
-                    alert('File berhasil diupload!');
-                    // Muat ulang agar thumbnail dan tab ikut diperbarui.
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi error saat upload');
-            });
-        }
-
-        function startTraining() {
-            const goodCount = parseInt(document.getElementById('goodCount').textContent);
-            const defectCount = parseInt(document.getElementById('defectCount').textContent);
-            
-            if (goodCount < 5 || defectCount < 5) {
-                alert('Upload minimal 5 gambar untuk setiap kategori sebelum training!');
-                return;
+        fetch('/start_training', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             }
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (data.success) {
+                monitorTraining();
+            } else {
+                alert('Error: ' + data.message);
+                resetTrainingUI();
+            }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            alert('Terjadi error saat memulai training');
+            resetTrainingUI();
+        });
+    }
 
-            // Hide training controls and show progress
-            document.getElementById('trainingControls').style.display = 'none';
-            document.getElementById('trainingProgress').style.display = 'block';
+    function monitorTraining() {
+        const interval = setInterval(function () {
+            fetch('/training_status')
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                updateTrainingProgress(data);
 
-            // Start training process
-            fetch('/start_training', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Monitor training progress
-                    monitorTraining();
-                } else {
-                    alert('Error: ' + data.message);
+                if (data.status === 'completed') {
+                    clearInterval(interval);
+                    showTrainingResults(data.results);
+                } else if (data.status === 'error') {
+                    clearInterval(interval);
+                    alert('Error during training: ' + data.message);
                     resetTrainingUI();
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi error saat memulai training');
-                resetTrainingUI();
+            .catch(function (error) {
+                console.error('Error monitoring training:', error);
             });
+        }, 2000);
+    }
+
+    function updateTrainingProgress(data) {
+        const steps = ['step1', 'step2', 'step3', 'step4'];
+        const currentStep = data.current_step || 0;
+
+        steps.forEach(function (stepId, index) {
+            const step = document.getElementById(stepId);
+            if (index < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (index === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+            } else {
+                step.classList.remove('active', 'completed');
+            }
+        });
+
+        const progress = Math.min((currentStep / 4) * 100, 100);
+        document.getElementById('trainingProgressBar').style.width = progress + '%';
+    }
+
+    function showTrainingResults(results) {
+        document.getElementById('trainAccuracy').textContent = ((results.train_accuracy ?? 0) * 100).toFixed(1) + '%';
+        document.getElementById('valAccuracy').textContent = ((results.val_accuracy ?? 0) * 100).toFixed(1) + '%';
+        document.getElementById('trainSamples').textContent = results.train_samples ?? '-';
+        document.getElementById('testSamples').textContent = results.test_samples ?? '-';
+
+        document.getElementById('trainingResults').style.display = 'block';
+    }
+
+    function resetTrainingUI() {
+        document.getElementById('trainingControls').style.display = 'flex';
+        document.getElementById('trainingProgress').style.display = 'none';
+    }
+
+    function deleteImage(button) {
+        const category = button.getAttribute('data-category');
+        const filename = button.getAttribute('data-filename');
+        const index = button.getAttribute('data-index');
+
+        if (!confirm('Apakah Anda yakin ingin menghapus gambar ini?')) {
+            return;
         }
 
-        function monitorTraining() {
-            const interval = setInterval(() => {
-                fetch('/training_status')
-                .then(response => response.json())
-                .then(data => {
-                    updateTrainingProgress(data);
-                    
-                    if (data.status === 'completed') {
-                        clearInterval(interval);
-                        showTrainingResults(data.results);
-                    } else if (data.status === 'error') {
-                        clearInterval(interval);
-                        alert('Error during training: ' + data.message);
-                        resetTrainingUI();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error monitoring training:', error);
-                });
-            }, 2000); // Check every 2 seconds
-        }
-
-        function updateTrainingProgress(data) {
-            // Update progress steps
-            const steps = ['step1', 'step2', 'step3', 'step4'];
-            const currentStep = data.current_step || 0;
-            
-            steps.forEach((stepId, index) => {
-                const step = document.getElementById(stepId);
-                if (index < currentStep) {
-                    step.classList.add('completed');
-                    step.classList.remove('active');
-                } else if (index === currentStep) {
-                    step.classList.add('active');
-                    step.classList.remove('completed');
-                } else {
-                    step.classList.remove('active', 'completed');
+        fetch('/delete_training_image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                category: category,
+                filename: filename
+            })
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (data.success) {
+                const imageElement = document.getElementById(`image-${category}-${index}`);
+                if (imageElement) {
+                    imageElement.remove();
                 }
-            });
 
-            // Update training progress bar berdasarkan langkah training
-            const progress = Math.min((currentStep / 4) * 100, 100);
-            document.getElementById('trainingProgressBar').style.width = progress + '%';
-        }
+                document.getElementById('goodCount').textContent = data.good_count;
+                document.getElementById('defectCount').textContent = data.defect_count;
+                document.getElementById('goodTabCount').textContent = data.good_count;
+                document.getElementById('defectTabCount').textContent = data.defect_count;
 
-        function showTrainingResults(results) {
-            document.getElementById('trainAccuracy').textContent = ((results.train_accuracy ?? 0) * 100).toFixed(1) + '%';
-            document.getElementById('valAccuracy').textContent = ((results.val_accuracy ?? 0) * 100).toFixed(1) + '%';
-            document.getElementById('trainSamples').textContent = results.train_samples ?? '-';
-            document.getElementById('testSamples').textContent = results.test_samples ?? '-';
+                checkEmptyLists();
 
-            document.getElementById('trainingResults').style.display = 'block';
-        }
-
-        function resetTrainingUI() {
-            document.getElementById('trainingControls').style.display = 'block';
-            document.getElementById('trainingProgress').style.display = 'none';
-        }
-
-        // Training data management functions
-        function deleteImage(button) {
-            const category = button.getAttribute('data-category');
-            const filename = button.getAttribute('data-filename');
-            const index = button.getAttribute('data-index');
-            
-            if (!confirm('Apakah Anda yakin ingin menghapus gambar ini?')) {
-                return;
+                alert('Gambar berhasil dihapus!');
+            } else {
+                alert('Error: ' + data.message);
             }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            alert('Terjadi error saat menghapus gambar');
+        });
+    }
 
-            fetch('/delete_training_image', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    category: category,
-                    filename: filename
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remove image element from DOM
-                    const imageElement = document.getElementById(`image-${category}-${index}`);
-                    if (imageElement) {
-                        imageElement.remove();
-                    }
-                    
-                    // Update counters
-                    document.getElementById('goodCount').textContent = data.good_count;
-                    document.getElementById('defectCount').textContent = data.defect_count;
-                    document.getElementById('goodTabCount').textContent = data.good_count;
-                    document.getElementById('defectTabCount').textContent = data.defect_count;
-                    
-                    // Check if list is empty and show message
-                    checkEmptyLists();
-                    
-                    alert('Gambar berhasil dihapus!');
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi error saat menghapus gambar');
-            });
+    function clearCategoryData(category) {
+        const categoryName = category === 'good' ? 'Good' : 'Defect';
+        if (!confirm(`Apakah Anda yakin ingin menghapus semua gambar ${categoryName}?`)) {
+            return;
         }
 
-        function clearCategoryData(category) {
-            const categoryName = category === 'good' ? 'Good' : 'Defect';
-            if (!confirm(`Apakah Anda yakin ingin menghapus semua gambar ${categoryName}?`)) {
-                return;
+        fetch('/clear_training_data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                category: category
+            })
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
             }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            alert('Terjadi error saat menghapus data');
+        });
+    }
 
-            fetch('/clear_training_data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    category: category
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload page to refresh the lists
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi error saat menghapus data');
-            });
+    function clearAllData() {
+        if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data training? Tindakan ini tidak dapat dibatalkan!')) {
+            return;
         }
 
-        function clearAllData() {
-            if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data training? Tindakan ini tidak dapat dibatalkan!')) {
-                return;
+        fetch('/clear_training_data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                category: 'all'
+            })
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
             }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            alert('Terjadi error saat menghapus data');
+        });
+    }
 
-            fetch('/clear_training_data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    category: 'all'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload page to refresh everything
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi error saat menghapus data');
-            });
+    function checkEmptyLists() {
+        const goodList = document.getElementById('goodImagesList');
+        const defectList = document.getElementById('defectImagesList');
+
+        if (goodList.children.length === 0) {
+            goodList.innerHTML = '<div class="empty-state" style="grid-column:1 / -1">Belum ada gambar good yang diupload.</div>';
         }
 
-        function checkEmptyLists() {
-            const goodList = document.getElementById('goodImagesList');
-            const defectList = document.getElementById('defectImagesList');
-            
-            // Check if good list is empty
-            if (goodList.children.length === 0) {
-                goodList.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Belum ada gambar good yang diupload
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Check if defect list is empty
-            if (defectList.children.length === 0) {
-                defectList.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Belum ada gambar defect yang diupload
-                        </div>
-                    </div>
-                `;
-            }
+        if (defectList.children.length === 0) {
+            defectList.innerHTML = '<div class="empty-state" style="grid-column:1 / -1">Belum ada gambar defect yang diupload.</div>';
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}

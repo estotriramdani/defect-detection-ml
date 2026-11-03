@@ -1,269 +1,241 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deteksi Cacat Label Kemasan</title>
-    <link rel="icon" href="data:,">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .upload-area {
-            border: 2px dashed #dee2e6;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.3s ease;
-            background-color: #f8f9fa;
-        }
-        .upload-area:hover {
-            border-color: #0d6efd;
-            background-color: #e7f3ff;
-        }
-        .upload-area.dragover {
-            border-color: #0d6efd;
-            background-color: #e7f3ff;
-        }
-        .preview-image {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .feature-card {
-            transition: transform 0.3s ease;
-        }
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-    </style>
-</head>
-<body class="bg-light">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-search me-2"></i>
-                Deteksi Cacat Label
+{% extends "base.html" %}
+
+{% block title %}Deteksi Cacat Label Kemasan{% endblock %}
+
+{% block local_nav %}
+<div class="local-nav">
+    <div class="local-nav__inner">
+        <span class="local-nav__title">Deteksi Cacat Label</span>
+        <div class="local-nav__actions">
+            <a class="btn btn--outline btn--sm" href="{{ url_for('training.training') }}">Training Model</a>
+            <a class="btn btn--primary btn--sm" href="#upload">Upload Gambar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container hero__copy">
+        <p class="kicker reveal">Deteksi cacat label kemasan</p>
+        <h1 class="hero-title reveal">Label sempurna.<br>Tanpa cacat.</h1>
+        <p class="lede reveal reveal--delay" style="margin-inline:auto">
+            Unggah gambar label, lalu biarkan model machine learning memeriksa kualitasnya
+            dalam hitungan detik.
+        </p>
+        <div class="hero__actions reveal reveal--delay">
+            <a class="btn btn--primary btn--lg" href="#upload">
+                Mulai analisis
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link active" href="/">
-                    <i class="fas fa-camera me-1"></i>
-                    Deteksi
-                </a>
-                <a class="nav-link" href="/training">
-                    <i class="fas fa-graduation-cap me-1"></i>
-                    Training
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container mt-5">
-        <!-- Header Section -->
-        <div class="row justify-content-center mb-5">
-            <div class="col-lg-8 text-center">
-                <h1 class="display-4 fw-bold text-dark mb-3">
-                    <i class="fas fa-camera-retro text-primary me-3"></i>
-                    Deteksi Cacat Label Kemasan
-                </h1>
-                <p class="lead text-muted">
-                    Gunakan teknologi AI untuk mendeteksi cacat pada label kemasan produk Anda
-                    dengan akurasi tinggi menggunakan model machine learning (Random Forest).
-                </p>
-            </div>
-        </div>
-
-        <!-- Upload Section -->
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card shadow-lg border-0">
-                    <div class="card-header bg-primary text-white text-center py-3">
-                        <h4 class="mb-0">
-                            <i class="fas fa-upload me-2"></i>
-                            Upload Gambar Label
-                        </h4>
-                    </div>
-                    <div class="card-body p-4">
-                        <!-- Flash Messages -->
-                        {% with messages = get_flashed_messages() %}
-                            {% if messages %}
-                                {% for message in messages %}
-                                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-
-                        <!-- Upload Form -->
-                        <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
-                            <div class="upload-area" id="uploadArea">
-                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                                <h5 class="text-muted mb-3">Seret dan lepas gambar di sini</h5>
-                                <p class="text-muted mb-3">atau</p>
-                                <input type="file" name="file" id="fileInput" class="d-none" accept="image/*" required>
-                                <button type="button" class="btn btn-outline-primary btn-lg" onclick="document.getElementById('fileInput').click()">
-                                    <i class="fas fa-folder-open me-2"></i>
-                                    Pilih File
-                                </button>
-                                <div class="mt-3">
-                                    <small class="text-muted">
-                                        Format yang didukung: PNG, JPG, JPEG, GIF, BMP (Maksimal 16MB)
-                                    </small>
-                                </div>
-                            </div>
-
-                            <!-- Preview Area -->
-                            <div id="previewArea" class="mt-4 text-center d-none">
-                                <h6 class="text-muted mb-3">Preview Gambar:</h6>
-                                <img id="previewImage" class="preview-image mb-3" alt="Preview">
-                                <div>
-                                    <button type="submit" class="btn btn-success btn-lg me-2">
-                                        <i class="fas fa-search me-2"></i>
-                                        Analisis Gambar
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary" onclick="resetUpload()">
-                                        <i class="fas fa-times me-2"></i>
-                                        Batal
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-
-                        <!-- Loading Animation -->
-                        <div id="loadingArea" class="text-center mt-4 d-none">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-3 text-muted">Sedang menganalisis gambar...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Features Section -->
-        <div class="row mt-5">
-            <div class="col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow feature-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
-                        <h5 class="card-title">AI Technology</h5>
-                        <p class="card-text text-muted">
-                            Menggunakan model Random Forest yang telah dilatih untuk mendeteksi cacat dengan akurasi tinggi.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow feature-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
-                        <h5 class="card-title">Cepat & Akurat</h5>
-                        <p class="card-text text-muted">
-                            Analisis gambar dalam hitungan detik dengan tingkat akurasi yang dapat diandalkan.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow feature-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
-                        <h5 class="card-title">Quality Control</h5>
-                        <p class="card-text text-muted">
-                            Membantu kontrol kualitas produksi dengan deteksi otomatis cacat pada label kemasan.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <a class="btn btn--outline btn--lg" href="{{ url_for('training.training') }}">Latih model</a>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4 mt-5">
-        <div class="container">
-            <p class="mb-0">
-                <i class="fas fa-copyright me-2"></i>
-                2025 Sistem Deteksi Cacat Label. Dibuat dengan Flask &amp; scikit-learn.
-            </p>
+    <div class="container hero__stage" id="upload">
+        <div class="upload-shell">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert--warn" role="alert">
+                        <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                <div class="dropzone" id="uploadArea" role="button" tabindex="0"
+                     aria-label="Pilih atau seret gambar label ke area ini">
+                    <span class="dropzone__icon">
+                        <svg class="icon icon--xl" aria-hidden="true"><use href="#i-upload"></use></svg>
+                    </span>
+                    <h2 class="dropzone__title">Seret gambar label ke sini</h2>
+                    <p class="dropzone__hint">atau pilih file dari perangkat Anda</p>
+                    <span class="btn btn--primary">Pilih File</span>
+                    <p class="dropzone__note">PNG, JPG, JPEG, GIF, BMP &middot; Maksimal 16 MB</p>
+                    <input type="file" name="file" id="fileInput" accept="image/*" hidden>
+                </div>
+
+                <div id="previewArea" class="preview-area" hidden>
+                    <p class="eyebrow" style="margin-bottom:12px">Pratinjau</p>
+                    <img id="previewImage" class="preview-image" alt="Pratinjau gambar yang akan dianalisis">
+                    <div class="actions" style="justify-content:center">
+                        <button type="submit" class="btn btn--primary btn--lg">
+                            <svg class="icon" aria-hidden="true"><use href="#i-scan"></use></svg>
+                            Analisis Gambar
+                        </button>
+                        <button type="button" class="btn btn--outline btn--lg" onclick="resetUpload()">Batal</button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="loadingArea" class="loading" hidden aria-live="polite">
+                <span class="spinner" aria-hidden="true"></span>
+                <p class="caption" style="margin:0">Sedang menganalisis gambar&hellip;</p>
+            </div>
         </div>
-    </footer>
+    </div>
+</section>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // Event listener untuk file input
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                previewFile(file);
-            }
-        });
+<section class="band" style="margin-top:90px">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-head__copy">
+                <p class="eyebrow">Kemampuan</p>
+                <h2 class="section-title">Dirancang untuk kontrol kualitas.</h2>
+            </div>
+            <a class="link" href="{{ url_for('training.training') }}">Kelola data training &rsaquo;</a>
+        </div>
 
-        // Drag and drop functionality
-        const uploadArea = document.getElementById('uploadArea');
+        <div class="grid grid--3">
+            <article class="feature-card">
+                <span class="feature-card__icon">
+                    <svg class="icon icon--lg" aria-hidden="true"><use href="#i-spark"></use></svg>
+                </span>
+                <h3 class="feature-card__title">Machine learning</h3>
+                <p class="feature-card__copy">
+                    Model Random Forest yang dilatih khusus untuk mengenali pola cacat pada label kemasan.
+                </p>
+            </article>
 
-        uploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
+            <article class="feature-card">
+                <span class="feature-card__icon">
+                    <svg class="icon icon--lg" aria-hidden="true"><use href="#i-chart"></use></svg>
+                </span>
+                <h3 class="feature-card__title">Cepat &amp; terukur</h3>
+                <p class="feature-card__copy">
+                    Hasil analisis muncul dalam hitungan detik, lengkap dengan tingkat kepercayaan model.
+                </p>
+            </article>
 
-        uploadArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-        });
+            <article class="feature-card">
+                <span class="feature-card__icon">
+                    <svg class="icon icon--lg" aria-hidden="true"><use href="#i-check"></use></svg>
+                </span>
+                <h3 class="feature-card__title">Kontrol kualitas</h3>
+                <p class="feature-card__copy">
+                    Membantu tim produksi menyaring label secara konsisten sebelum masuk ke tahap berikutnya.
+                </p>
+            </article>
+        </div>
+    </div>
+</section>
 
-        uploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    document.getElementById('fileInput').files = files;
-                    previewFile(file);
-                } else {
-                    alert('Mohon upload file gambar yang valid.');
-                }
-            }
-        });
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <div class="section-head__copy">
+                <p class="eyebrow">Cara kerja</p>
+                <h2 class="section-title">Tiga langkah, satu keputusan.</h2>
+            </div>
+        </div>
 
-        // Function untuk preview gambar
-        function previewFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('previewImage').src = e.target.result;
-                document.getElementById('previewArea').classList.remove('d-none');
-            };
-            reader.readAsDataURL(file);
+        <div class="steps">
+            <article class="step-item">
+                <span class="step-item__index">01</span>
+                <h3 class="step-item__title">Unggah gambar</h3>
+                <p class="step-item__copy">Seret atau pilih foto label kemasan langsung dari perangkat Anda.</p>
+            </article>
+            <article class="step-item">
+                <span class="step-item__index">02</span>
+                <h3 class="step-item__title">Model menganalisis</h3>
+                <p class="step-item__copy">Fitur visual label diekstrak dan dibandingkan dengan data training.</p>
+            </article>
+            <article class="step-item">
+                <span class="step-item__index">03</span>
+                <h3 class="step-item__title">Baca hasil</h3>
+                <p class="step-item__copy">Lihat status label, confidence, dan interpretasi yang bisa langsung ditindaklanjuti.</p>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('uploadArea');
+    const previewArea = document.getElementById('previewArea');
+    const previewImage = document.getElementById('previewImage');
+    const loadingArea = document.getElementById('loadingArea');
+
+    fileInput.addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            previewFile(file);
+        }
+    });
+
+    uploadArea.addEventListener('click', function (event) {
+        if (event.target !== fileInput) {
+            fileInput.click();
+        }
+    });
+
+    uploadArea.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            fileInput.click();
+        }
+    });
+
+    uploadArea.addEventListener('dragover', function (event) {
+        event.preventDefault();
+        uploadArea.classList.add('is-dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function (event) {
+        event.preventDefault();
+        uploadArea.classList.remove('is-dragover');
+    });
+
+    uploadArea.addEventListener('drop', function (event) {
+        event.preventDefault();
+        uploadArea.classList.remove('is-dragover');
+
+        const files = event.dataTransfer.files;
+        if (!files.length) {
+            return;
         }
 
-        // Function untuk reset upload
-        function resetUpload() {
-            document.getElementById('fileInput').value = '';
-            document.getElementById('previewArea').classList.add('d-none');
-            document.getElementById('loadingArea').classList.add('d-none');
+        const file = files[0];
+        if (!file.type.startsWith('image/')) {
+            alert('Mohon upload file gambar yang valid.');
+            return;
         }
 
-        // Form submit dengan loading animation
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            const fileInput = document.getElementById('fileInput');
-            if (!fileInput.files.length) {
-                e.preventDefault();
-                alert('Mohon pilih file gambar terlebih dahulu.');
-                return;
-            }
-            
-            document.getElementById('previewArea').classList.add('d-none');
-            document.getElementById('loadingArea').classList.remove('d-none');
-        });
-    </script>
-</body>
-</html>
+        fileInput.files = files;
+        previewFile(file);
+    });
+
+    function previewFile(file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            previewImage.src = event.target.result;
+            previewArea.hidden = false;
+            loadingArea.hidden = true;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+        fileInput.value = '';
+        previewArea.hidden = true;
+        loadingArea.hidden = true;
+        uploadArea.classList.remove('is-dragover');
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', function (event) {
+        if (!fileInput.files.length) {
+            event.preventDefault();
+            alert('Mohon pilih file gambar terlebih dahulu.');
+            return;
+        }
+
+        previewArea.hidden = true;
+        loadingArea.hidden = false;
+    });
+</script>
+{% endblock %}

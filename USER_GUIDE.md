@@ -86,7 +86,7 @@ Pedoman umum:
 5. Tunggu hingga progress selesai; model langsung aktif tanpa restart.
 
 <p align="center">
-  <img src="docs/screenshots/training.png" alt="Halaman training" width="720">
+  <img src="docs/screenshots/training-upload.png" alt="Upload dataset training" width="720">
 </p>
 
 ### Kriteria gambar training

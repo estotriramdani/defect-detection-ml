@@ -1,341 +1,163 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil Deteksi - Deteksi Cacat Label</title>
-    <link rel="icon" href="data:,">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .result-card {
-            transition: all 0.3s ease;
-        }
-        .result-image {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .confidence-bar {
-            height: 20px;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #ff4757, #ffa502, #2ed573);
-        }
-        .prediction-good {
-            color: #2ed573;
-            background-color: #f1f9f4;
-            border: 2px solid #2ed573;
-        }
-        .prediction-defect {
-            color: #ff4757;
-            background-color: #fff1f2;
-            border: 2px solid #ff4757;
-        }
-        .prediction-unknown {
-            color: #ffa502;
-            background-color: #fff9f0;
-            border: 2px solid #ffa502;
-        }
-        .confidence-meter {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            position: relative;
-            margin: 0 auto;
-        }
-        .confidence-meter svg {
-            transform: rotate(-90deg);
-        }
-        .animate-result {
-            animation: slideInUp 0.6s ease-out;
-        }
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
-</head>
-<body class="bg-light">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-search me-2"></i>
-                Deteksi Cacat Label
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">
-                    <i class="fas fa-home me-1"></i>
-                    Kembali ke Beranda
-                </a>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}Hasil Deteksi - Deteksi Cacat Label{% endblock %}
+
+{% block local_nav %}
+<div class="local-nav">
+    <div class="local-nav__inner">
+        <span class="local-nav__title">Hasil Analisis</span>
+        <div class="local-nav__actions">
+            <a class="btn btn--outline btn--sm" href="{{ url_for('main.index') }}">Beranda</a>
+            <a class="btn btn--primary btn--sm" href="{{ url_for('main.index') }}#upload">Analisis Baru</a>
         </div>
-    </nav>
+    </div>
+</div>
+{% endblock %}
 
-    <!-- Main Content -->
-    <div class="container mt-5">
-        <!-- Header -->
-        <div class="row justify-content-center mb-4">
-            <div class="col-lg-10 text-center">
-                <h1 class="display-5 fw-bold text-dark mb-3">
-                    <i class="fas fa-chart-line text-primary me-3"></i>
-                    Hasil Analisis
-                </h1>
-                <p class="lead text-muted">
-                    Berikut adalah hasil deteksi cacat pada gambar yang Anda upload
-                </p>
-            </div>
-        </div>
+{% block content %}
+{% set is_success = status.startswith('success') or status.startswith('Gambar tidak sesuai') %}
 
-        <!-- Result Section -->
-        <div class="row justify-content-center animate-result">
-            <div class="col-lg-10">
-                <div class="card shadow-lg border-0">
-                    <div class="card-body p-4">
-                        <div class="row">
-                            <!-- Image Display -->
-                            <div class="col-lg-6 mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-image me-2"></i>
-                                    Gambar yang Dianalisis
-                                </h5>
-                                <div class="text-center">
-                                    <img src="{{ url_for('static', filename='uploads/' + filename) }}" 
-                                         alt="Uploaded Image" class="result-image">
-                                    <div class="mt-3">
-                                        <small class="text-muted">File: {{ filename }}</small>
-                                    </div>
-                                </div>
-                            </div>
+<section class="result-hero">
+    <div class="container">
+        <p class="kicker reveal">Hasil deteksi</p>
+        <h1 class="page-title reveal">Analisis selesai.</h1>
+        <p class="lede reveal reveal--delay">
+            Berikut hasil pemeriksaan cacat pada gambar label yang Anda unggah.
+        </p>
+    </div>
+</section>
 
-                            <!-- Results Display -->
-                            <div class="col-lg-6">
-                                <h5 class="mb-4">
-                                    <i class="fas fa-analytics me-2"></i>
-                                    Hasil Deteksi
-                                </h5>
+<section class="section section--tight">
+    <div class="container">
+        <div class="result-layout">
+            <figure class="result-media reveal">
+                <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="Gambar label yang dianalisis">
+                <figcaption>{{ filename }}</figcaption>
+            </figure>
 
-                                <!-- Status Check -->
-                                {% if status.startswith('success') or status.startswith('Gambar tidak sesuai') %}
-                                    <!-- Prediction Result -->
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold">Status Label:</label>
-                                        {% if prediction == 'good' %}
-                                            <div class="alert prediction-good text-center py-3">
-                                                <i class="fas fa-check-circle fa-2x mb-2"></i>
-                                                <h4 class="mb-0 fw-bold">GOOD</h4>
-                                                <small>Label dalam kondisi baik</small>
-                                            </div>
-                                        {% elif prediction == 'defect' %}
-                                            <div class="alert prediction-defect text-center py-3">
-                                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                                                <h4 class="mb-0 fw-bold">DEFECT</h4>
-                                                <small>Terdeteksi cacat pada label</small>
-                                            </div>
-                                        {% elif prediction == 'unknown' %}
-                                            <div class="alert prediction-unknown text-center py-3">
-                                                <i class="fas fa-question-circle fa-2x mb-2"></i>
-                                                <h4 class="mb-0 fw-bold">UNKNOWN</h4>
-                                                <small>Gambar tidak sesuai dengan data training</small>
-                                            </div>
-                                        {% endif %}
-                                    </div>
+            <div class="result-panel reveal reveal--delay">
+                {% if is_success %}
+                    {% if prediction == 'good' %}
+                    <div class="verdict verdict--good">
+                        <p class="verdict__label">Status label</p>
+                        <p class="verdict__value">GOOD</p>
+                        <p class="verdict__note">Label dalam kondisi baik dan memenuhi standar kualitas.</p>
+                    </div>
+                    {% elif prediction == 'defect' %}
+                    <div class="verdict verdict--defect">
+                        <p class="verdict__label">Status label</p>
+                        <p class="verdict__value">DEFECT</p>
+                        <p class="verdict__note">Terdeteksi cacat pada label kemasan.</p>
+                    </div>
+                    {% elif prediction == 'unknown' %}
+                    <div class="verdict verdict--unknown">
+                        <p class="verdict__label">Status label</p>
+                        <p class="verdict__value">UNKNOWN</p>
+                        <p class="verdict__note">Gambar tidak sesuai dengan pola data training.</p>
+                    </div>
+                    {% endif %}
 
-                                    <!-- Confidence Score -->
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold">Tingkat Kepercayaan:</label>
-                                        <div class="d-flex align-items-center">
-                                            <div class="confidence-meter me-3">
-                                                <svg width="120" height="120">
-                                                    <circle cx="60" cy="60" r="50" 
-                                                            fill="none" 
-                                                            stroke="#e9ecef" 
-                                                            stroke-width="8"/>
-                                                    <circle cx="60" cy="60" r="50" 
-                                                            fill="none" 
-                                                            stroke="{% if prediction == 'good' %}#2ed573{% elif prediction == 'defect' %}#ff4757{% else %}#ffa502{% endif %}" 
-                                                            stroke-width="8"
-                                                            stroke-linecap="round"
-                                                            stroke-dasharray="314.16" 
-                                                            stroke-dashoffset="{{ 314.16 - (314.16 * confidence) }}"/>
-                                                </svg>
-                                                <div class="position-absolute top-50 start-50 translate-middle text-center">
-                                                    <h4 class="mb-0 fw-bold">{{ "%.1f"|format(confidence * 100) }}%</h4>
-                                                    <small class="text-muted">Confidence</small>
-                                                </div>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar {% if prediction == 'good' %}bg-success{% elif prediction == 'defect' %}bg-danger{% else %}bg-warning{% endif %}" 
-                                                         role="progressbar" 
-                                                         style="width: {{ confidence * 100 }}%"
-                                                         aria-valuenow="{{ confidence * 100 }}" 
-                                                         aria-valuemin="0" 
-                                                         aria-valuemax="100">
-                                                        {{ "%.1f"|format(confidence * 100) }}%
-                                                    </div>
-                                                </div>
-                                                <small class="text-muted mt-1 d-block">
-                                                    {% if confidence >= 0.9 %}
-                                                        Sangat Yakin
-                                                    {% elif confidence >= 0.7 %}
-                                                        Cukup Yakin
-                                                    {% else %}
-                                                        Kurang Yakin
-                                                    {% endif %}
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Interpretation -->
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold">Interpretasi:</label>
-                                        <div class="card bg-light">
-                                            <div class="card-body">
-                                                {% if prediction == 'good' %}
-                                                    <p class="mb-2">
-                                                        <i class="fas fa-thumbs-up text-success me-2"></i>
-                                                        Label kemasan dalam kondisi <strong>baik</strong> dan memenuhi standar kualitas.
-                                                    </p>
-                                                    <p class="mb-0 text-muted">
-                                                        Produk dapat dilanjutkan ke tahap berikutnya dalam proses produksi.
-                                                    </p>
-                                                {% elif prediction == 'defect' %}
-                                                    <p class="mb-2">
-                                                        <i class="fas fa-exclamation-circle text-danger me-2"></i>
-                                                        Terdeteksi <strong>cacat</strong> pada label kemasan.
-                                                    </p>
-                                                    <p class="mb-0 text-muted">
-                                                        Disarankan untuk melakukan pemeriksaan manual dan tindakan korektif.
-                                                    </p>
-                                                {% elif prediction == 'unknown' %}
-                                                    <p class="mb-2">
-                                                        <i class="fas fa-question-circle text-warning me-2"></i>
-                                                        Gambar <strong>tidak dikenali</strong> oleh sistem.
-                                                    </p>
-                                                    <p class="mb-0 text-muted">
-                                                        Gambar tidak sesuai dengan pola data training. Diperlukan verifikasi manual atau pelatihan ulang model dengan data yang lebih lengkap.
-                                                    </p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-
+                    <div class="confidence-block">
+                        <div class="confidence-block__head">
+                            <p class="verdict__label" style="margin:0">Tingkat kepercayaan</p>
+                            <span class="confidence-note">
+                                {% if confidence >= 0.9 %}
+                                    Sangat yakin
+                                {% elif confidence >= 0.7 %}
+                                    Cukup yakin
                                 {% else %}
-                                    <!-- Error Display -->
-                                    <div class="alert alert-danger">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        <strong>Error:</strong> {{ status }}
-                                    </div>
+                                    Kurang yakin
                                 {% endif %}
-
-                                <!-- Action Buttons -->
-                                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                                    <a href="/" class="btn btn-primary btn-lg me-md-2">
-                                        <i class="fas fa-upload me-2"></i>
-                                        Analisis Gambar Lain
-                                    </a>
-                                    <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
-                                        <i class="fas fa-print me-2"></i>
-                                        Cetak Hasil
-                                    </button>
-                                </div>
-                            </div>
+                            </span>
+                        </div>
+                        <p class="confidence-value">{{ "%.1f"|format(confidence * 100) }}%</p>
+                        <div class="meter" role="progressbar" aria-valuenow="{{ (confidence * 100)|round(1) }}"
+                             aria-valuemin="0" aria-valuemax="100" aria-label="Tingkat kepercayaan model">
+                            <span class="meter__fill" id="confidenceMeter" style="width:0"></span>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Technical Details -->
-        <div class="row justify-content-center mt-4">
-            <div class="col-lg-10">
-                <div class="card border-0 bg-light">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Detail Teknis
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <small class="text-muted">Model:</small><br>
-                                <strong>Random Forest</strong>
-                            </div>
-                            <div class="col-md-3">
-                                <small class="text-muted">Prediksi:</small><br>
-                                <strong>{{ prediction|title }}</strong>
-                            </div>
-                            <div class="col-md-3">
-                                <small class="text-muted">Confidence:</small><br>
-                                <strong>{{ "%.4f"|format(confidence) }}</strong>
-                            </div>
-                            <div class="col-md-3">
-                                <small class="text-muted">Anomaly Score:</small><br>
-                                <strong>{{ "%.4f"|format(anomaly_score|default(0.0)) }}</strong>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <small class="text-muted">Status:</small><br>
-                                <strong>{{ status }}</strong>
-                            </div>
-                        </div>
+                    <div class="interpretation">
+                        {% if prediction == 'good' %}
+                            <p><strong>Label dalam kondisi baik.</strong> Produk dapat dilanjutkan ke tahap berikutnya dalam proses produksi.</p>
+                            <p>Model tidak menemukan indikasi cacat yang berarti pada gambar ini.</p>
+                        {% elif prediction == 'defect' %}
+                            <p><strong>Terdeteksi cacat pada label.</strong> Disarankan melakukan pemeriksaan manual dan tindakan korektif.</p>
+                            <p>Periksa kembali area cetak, potongan, dan posisi label sebelum produk diloloskan.</p>
+                        {% elif prediction == 'unknown' %}
+                            <p><strong>Gambar tidak dikenali oleh sistem.</strong> Gambar tidak sesuai dengan pola data training.</p>
+                            <p>Diperlukan verifikasi manual atau pelatihan ulang model dengan dataset yang lebih lengkap.</p>
+                        {% endif %}
                     </div>
+                {% else %}
+                    <div class="alert alert--error" role="alert">
+                        <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                        <span><strong>Error:</strong> {{ status }}</span>
+                    </div>
+                {% endif %}
+
+                <div class="actions no-print">
+                    <a class="btn btn--primary btn--lg" href="{{ url_for('main.index') }}#upload">
+                        <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                        Analisis Gambar Lain
+                    </a>
+                    <button type="button" class="btn btn--outline btn--lg" onclick="window.print()">
+                        <svg class="icon" aria-hidden="true"><use href="#i-print"></use></svg>
+                        Cetak Hasil
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4 mt-5">
-        <div class="container">
-            <p class="mb-0">
-                <i class="fas fa-copyright me-2"></i>
-                2025 Sistem Deteksi Cacat Label. Dibuat dengan Flask &amp; scikit-learn.
-            </p>
+<section class="band section--tight">
+    <div class="container">
+        <div class="section-head" style="margin-bottom:24px">
+            <div class="section-head__copy">
+                <p class="eyebrow">Detail teknis</p>
+                <h2 class="section-title">Di balik hasil ini.</h2>
+            </div>
         </div>
-    </footer>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // Animate confidence meter on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const circle = document.querySelector('circle[stroke-dasharray]');
-            if (circle) {
-                const confidenceValue = parseFloat('{{ confidence }}');
-                const circumference = 314.16;
-                const offset = circumference - (circumference * confidenceValue);
-                
-                // Start animation from 0
-                circle.style.strokeDashoffset = circumference;
-                
-                // Animate to target value
-                setTimeout(function() {
-                    circle.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
-                    circle.style.strokeDashoffset = offset;
-                }, 500);
-            }
-        });
+        <div class="card">
+            <div class="spec-grid">
+                <div class="spec">
+                    <span class="spec__label">Model</span>
+                    <p class="spec__value">Random Forest</p>
+                </div>
+                <div class="spec">
+                    <span class="spec__label">Prediksi</span>
+                    <p class="spec__value">{{ prediction|title }}</p>
+                </div>
+                <div class="spec">
+                    <span class="spec__label">Confidence</span>
+                    <p class="spec__value">{{ "%.4f"|format(confidence) }}</p>
+                </div>
+                <div class="spec">
+                    <span class="spec__label">Anomaly score</span>
+                    <p class="spec__value">{{ "%.4f"|format(anomaly_score|default(0.0)) }}</p>
+                </div>
+            </div>
+            <hr class="divider" style="margin:24px 0">
+            <div class="spec">
+                <span class="spec__label">Status</span>
+                <p class="spec__value">{{ status }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
 
-        // Auto-scroll to result on mobile
-        if (window.innerWidth <= 768) {
-            setTimeout(() => {
-                document.querySelector('.animate-result').scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }, 100);
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const meter = document.getElementById('confidenceMeter');
+        if (meter) {
+            requestAnimationFrame(function () {
+                meter.style.width = '{{ (confidence * 100)|round(1) }}%';
+            });
         }
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

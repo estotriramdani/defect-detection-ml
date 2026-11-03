@@ -28,10 +28,16 @@ Aplikasi web Flask untuk mengklasifikasikan kualitas label kemasan menjadi **goo
   <img src="docs/screenshots/result-unknown.png" alt="Hasil deteksi UNKNOWN" width="46%">
 </p>
 
-**Halaman training — dataset dan upload**
+**Halaman training — ringkasan dataset**
 
 <p align="center">
   <img src="docs/screenshots/training.png" alt="Halaman training" width="720">
+</p>
+
+**Upload dataset training**
+
+<p align="center">
+  <img src="docs/screenshots/training-upload.png" alt="Upload dataset training" width="720">
 </p>
 
 **Hasil training**
