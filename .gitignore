@@ -205,6 +205,7 @@ models/*.joblib
 *.temp
 temp/
 tmp/
+.playwright-mcp/
 
 # OS generated files
 .DS_Store

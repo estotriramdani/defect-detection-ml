@@ -44,6 +44,10 @@ python create_sample_data.py
 3. Format: PNG, JPG, JPEG, GIF, BMP — maksimal 16 MB.
 4. Tunggu hasil prediksi.
 
+<p align="center">
+  <img src="docs/screenshots/home.png" alt="Halaman utama aplikasi" width="720">
+</p>
+
 ### Membaca Hasil
 
 | Hasil | Arti | Tindakan |
@@ -51,6 +55,11 @@ python create_sample_data.py
 | **GOOD** | Label berkualitas baik | Lanjut ke proses berikutnya |
 | **DEFECT** | Label cacat | Inspeksi manual / perbaiki |
 | **UNKNOWN** | Gambar tidak sesuai pola training | Periksa ulang gambar atau tambah data training |
+
+<p align="center">
+  <img src="docs/screenshots/result-good.png" alt="Hasil deteksi GOOD" width="46%">
+  <img src="docs/screenshots/result-unknown.png" alt="Hasil deteksi UNKNOWN" width="46%">
+</p>
 
 Setiap hasil menampilkan **confidence** (0–100%). Semakin tinggi, semakin yakin model.
 
@@ -76,6 +85,10 @@ Pedoman umum:
 4. Klik **Mulai Training**.
 5. Tunggu hingga progress selesai; model langsung aktif tanpa restart.
 
+<p align="center">
+  <img src="docs/screenshots/training.png" alt="Halaman training" width="720">
+</p>
+
 ### Kriteria gambar training
 
 **Good:**
@@ -100,6 +113,10 @@ Di halaman training, bagian **Manajemen Data Training**:
 
 Setelah mengubah dataset, lakukan training ulang agar model menyesuaikan.
 
+<p align="center">
+  <img src="docs/screenshots/training-dataset.png" alt="Manajemen data training" width="720">
+</p>
+
 ### Hasil Training
 
 Setelah selesai, aplikasi menampilkan:
@@ -109,6 +126,10 @@ Setelah selesai, aplikasi menampilkan:
 - Jumlah sampel training dan test.
 
 Training accuracy yang sangat tinggi (mis. 100%) dengan validation accuracy lebih rendah adalah hal normal pada dataset kecil.
+
+<p align="center">
+  <img src="docs/screenshots/training-completed.png" alt="Hasil training" width="720">
+</p>
 
 ## Pengaturan Sensitivitas
 

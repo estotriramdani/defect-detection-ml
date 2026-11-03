@@ -13,6 +13,33 @@ Aplikasi web Flask untuk mengklasifikasikan kualitas label kemasan menjadi **goo
 - Manajemen dataset training: lihat, hapus per gambar, hapus per kategori.
 - REST API untuk integrasi (`POST /api/predict`).
 
+## Tangkapan Layar
+
+**Halaman utama — upload gambar**
+
+<p align="center">
+  <img src="docs/screenshots/home.png" alt="Halaman utama aplikasi" width="720">
+</p>
+
+**Hasil deteksi — GOOD dan UNKNOWN**
+
+<p align="center">
+  <img src="docs/screenshots/result-good.png" alt="Hasil deteksi GOOD" width="46%">
+  <img src="docs/screenshots/result-unknown.png" alt="Hasil deteksi UNKNOWN" width="46%">
+</p>
+
+**Halaman training — dataset dan upload**
+
+<p align="center">
+  <img src="docs/screenshots/training.png" alt="Halaman training" width="720">
+</p>
+
+**Hasil training**
+
+<p align="center">
+  <img src="docs/screenshots/training-completed.png" alt="Hasil training" width="720">
+</p>
+
 ## Teknologi
 
 | Komponen | Keterangan |
@@ -43,12 +70,15 @@ defect-detection-ml/
 ├── generate_from_base.py      # Generator dataset dari gambar label asli (disarankan)
 ├── create_sample_data.py      # Generator dataset sintetis (alternatif)
 ├── retrain_model.py           # Retrain model dari CLI
+├── evaluate_model.py          # Evaluasi akurasi (cross-validation)
 ├── test_unknown_detection.py  # Cek cepat perilaku deteksi unknown
 ├── requirements.txt
 ├── .env.example               # Contoh konfigurasi environment
 ├── ecosystem.config.js        # Konfigurasi PM2
 ├── README.md
 ├── USER_GUIDE.md
+├── MODEL_ACCURACY.md          # Dokumentasi & hasil evaluasi akurasi model
+├── docs/screenshots/          # Screenshot aplikasi untuk dokumentasi
 ├── models/                    # model .pkl (dibuat saat training, tidak di-commit)
 ├── static/
 │   ├── base-data/             # Contoh gambar untuk testing
@@ -170,6 +200,26 @@ Prediksi dianggap `unknown` jika salah satu kondisi terpenuhi:
 - Naikkan threshold → lebih longgar.
 
 Anomaly score dihitung dari rata-rata jarak Euclidean fitur gambar ke seluruh sampel training, dinormalisasi dengan persentil ke-90 jarak antar-sampel, dan dibatasi maksimal 3.0.
+
+## Evaluasi Akurasi
+
+Hasil evaluasi lengkap (5-fold cross-validation, confusion matrix, anomaly score,
+dan keterbatasan model) ada di [`MODEL_ACCURACY.md`](MODEL_ACCURACY.md).
+
+Ringkasan pada dataset 26 good + 25 defect:
+
+| Metrik | Nilai |
+|---|---|
+| Akurasi 5-fold CV | 0.9800 ± 0.0400 |
+| Precision (weighted) | 0.9833 ± 0.0333 |
+| Recall (weighted) | 0.9800 ± 0.0400 |
+| F1-score (weighted) | 0.9798 ± 0.0404 |
+
+Jalankan ulang evaluasi dengan:
+
+```bash
+python evaluate_model.py
+```
 
 ## API
 
